@@ -109,9 +109,8 @@ export const SourcePanel: React.FC<SourcePanelProps> = ({
               style={{ display: "block", marginBottom: 16 }}
             >
               {filteredNotes.length > 0
-                ? `${filteredNotes.length} note${
-                    filteredNotes.length !== 1 ? "s" : ""
-                  } found`
+                ? `${filteredNotes.length} note${filteredNotes.length !== 1 ? "s" : ""
+                } found`
                 : "No notes available"}
             </Text>
 
@@ -136,6 +135,7 @@ export const SourcePanel: React.FC<SourcePanelProps> = ({
                           setSelectedNoteId(note.id);
                           form.setFieldsValue({ noteId: note.id });
                         }}
+                        onDelete={() => { }}
                       />
                     </Col>
                   );

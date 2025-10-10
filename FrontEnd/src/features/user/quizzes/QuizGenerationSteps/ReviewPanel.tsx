@@ -43,7 +43,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 note={selectedNote}
                 darkMode={darkMode}
                 isSelected={true}
-                onSelect={() => {}}
+                onSelect={() => { }}
+                onDelete={() => { }}
               />
             ) : (
               <Card style={{ textAlign: "center", padding: 24 }}>

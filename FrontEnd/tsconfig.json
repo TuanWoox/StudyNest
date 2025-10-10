@@ -9,6 +9,9 @@
     }
   ],
   "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "strict": true,
     "baseUrl": ".",
     "paths": {
       "@/*": [
