@@ -35,23 +35,25 @@ const Login: React.FC = () => {
     });
 
     useEffect(() => {
-        // Extract the token from the URL
         const params = new URLSearchParams(window.location.search);
         const token = params.get("token");
+        if (!token) {
+            params.delete("token");
+            return;
+        }
 
-        if (token) {
-            window.localStorage.setItem('accessToken', token);
-            dispatch(initAuthState(token));
-            switch (role) {
-                case ERole.User:
-                    navigate("/user/notes");
-                    break;
-                case ERole.Admin:
-                    navigate("/admin/dashboard");
-                    break;
-            }
-        } else {
-            console.log("No token found in URL");
+        window.localStorage.setItem("accessToken", token);
+        dispatch(initAuthState(token));
+
+        switch (role) {
+            case ERole.User:
+                navigate("/user/notes");
+                break;
+            case ERole.Admin:
+                navigate("/admin/dashboard");
+                break;
+            default:
+                break;
         }
     }, []);
 
@@ -158,24 +160,28 @@ const Login: React.FC = () => {
                             'Login'
                         )}
                     </button>
-                    <GoogleLogin />
 
-                    {/* Links */}
-                    <div className="flex justify-between text-sm text-gray-600">
-                        <span
-                            className="cursor-pointer hover:text-gray-900 transition"
-                            onClick={() => navigate('/forgot-password')}
-                        >
-                            Forgot Password?
-                        </span>
-                        <span
-                            className="cursor-pointer hover:text-gray-900 transition"
-                            onClick={() => navigate('/register')}
-                        >
-                            Register
-                        </span>
-                    </div>
                 </form>
+
+                <div className="my-7 w-full">
+                    <GoogleLogin />
+                </div>
+
+                {/* Links */}
+                <div className="flex justify-between w-full text-sm text-gray-600">
+                    <span
+                        className="cursor-pointer hover:text-gray-900 transition"
+                        onClick={() => navigate('/forgot-password')}
+                    >
+                        Forgot Password?
+                    </span>
+                    <span
+                        className="cursor-pointer hover:text-gray-900 transition"
+                        onClick={() => navigate('/register')}
+                    >
+                        Register
+                    </span>
+                </div>
             </div>
         </div>
     );

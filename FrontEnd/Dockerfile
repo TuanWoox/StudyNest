@@ -2,6 +2,16 @@ FROM node:22 AS build
 
 WORKDIR /app
 
+# Build arguments
+ARG VITE_API_URL
+ARG VITE_API_URL_BASIC
+ARG VITE_API_GOOGLE_AUTH_API
+
+# Environment variables for Vite
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_API_URL_BASIC=$VITE_API_URL_BASIC
+ENV VITE_API_GOOGLE_AUTH_API=$VITE_API_GOOGLE_AUTH_API
+
 COPY package.json ./
 COPY package-lock.json ./
 

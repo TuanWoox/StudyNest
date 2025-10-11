@@ -185,7 +185,6 @@ export function useCreateEditor({
                     'alignmentTune',
                     'noticeTune',
                     'indentTune',
-                    'imageResize',
                 ],
 
                 onReady: () => {

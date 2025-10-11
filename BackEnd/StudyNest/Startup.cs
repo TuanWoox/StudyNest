@@ -1,4 +1,4 @@
-﻿using Asp.Versioning; 
+﻿using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -43,7 +43,7 @@ namespace StudyNest
 
         public void ConfigureServices(IServiceCollection services)
         {
- 
+
             services.AddEndpointsApiExplorer();
 
             AddAPIVersioning(services);
@@ -102,7 +102,7 @@ namespace StudyNest
                 endpoints.MapControllers();
                 endpoints.MapHub<Business.Hubs.QuizAttemptSnapshotHub>("/hub/quiz-attempt-snapshot");
             });
-            
+
 
             app.AddHangfireDashBoardSetup(Configuration);
             await InitData(app.ApplicationServices);
@@ -137,7 +137,6 @@ namespace StudyNest
                        .SetIsOriginAllowedToAllowWildcardSubdomains()
                        .AllowAnyMethod()
                        .AllowAnyHeader()
-                       .AllowCredentials()
                        .AllowCredentials();
                 });
             });
@@ -367,7 +366,7 @@ namespace StudyNest
             }
         }
         #endregion
-    
+
     }
 
 }

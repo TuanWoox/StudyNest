@@ -15,6 +15,7 @@ import { adminMenus, userMenus } from "@/constants/menus";
 import { resetAuthState, selectRole } from "@/store/authSlice";
 import { useReduxSelector } from "@/hooks/reduxHook/useReduxSelector";
 import { useReduxDispatch } from "@/hooks/reduxHook/useReduxDispatch";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 const InnerLayout = () => {
@@ -22,6 +23,7 @@ const InnerLayout = () => {
   const dispatch = useReduxDispatch();
   const [darkMode, setDarkMode] = useState(false);
   const role = useReduxSelector(selectRole);
+  const queryClient = useQueryClient();
   if (!role) return <Navigate to="/login" replace />
   const layoutTitle = role === ERole.Admin ? "Admin Panel" : "Study Nest";
   const menus = role === ERole.Admin ? adminMenus : userMenus;
@@ -49,6 +51,7 @@ const InnerLayout = () => {
           onClick: () => {
             dispatch(resetAuthState());
             window.localStorage.removeItem("accessToken");
+            queryClient.clear(); // <- This removes all cached queries
             navigate('/login')
           },
         },
