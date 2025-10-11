@@ -1,4 +1,5 @@
 ﻿using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -200,6 +201,94 @@ namespace StudyNest.Business.v1
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+        public async Task<ReturnResult<string>> LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal)
+        {
+            var result = new ReturnResult<string>();
+
+            try
+            {
+                if (claimsPrincipal == null)
+                {
+                    result.Message = "Invalid Google login information.";
+                    return result;
+                }
+
+                var email = claimsPrincipal.FindFirstValue(ClaimTypes.Email);
+
+                if (string.IsNullOrEmpty(email))
+                {
+                    result.Message = "Google account does not provide an email address.";
+                    return result;
+                }
+
+                var user = await _userManager.FindByEmailAsync(email);
+
+                // If user does not exist, create one
+                if (user == null)
+                {
+                    var fullName = $"{claimsPrincipal.FindFirstValue(ClaimTypes.Name) ?? email}".Trim();
+
+                    var newUser = new ApplicationUser
+                    {
+                        UserName = email,
+                        Email = email,
+                        FullName = fullName,
+                        EmailConfirmed = true,
+                        DateCreated = DateTimeOffset.UtcNow,
+                        DateOfBirth = DateTimeOffset.UtcNow,
+                    };
+
+                    var createResult = await _userManager.CreateAsync(newUser);
+
+                    if (!createResult.Succeeded)
+                    {
+                        result.Message = "Unable to create user from Google login: " +
+                                         string.Join(", ", createResult.Errors.Select(e => e.Description));
+                        return result;
+                    }
+
+                    var createdUser = await _userManager.FindByNameAsync(email);
+
+                    // Assign default user role
+                    if (await _roleManager.RoleExistsAsync(UserRoleEnum.user.ToString()))
+                    {
+                        await _userManager.AddToRoleAsync(createdUser, UserRoleEnum.user.ToString());
+                    }
+
+                    user = createdUser;
+                }
+
+                // Add external login info if not already linked
+                var info = new UserLoginInfo(
+                    "Google",
+                    claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier) ?? Guid.NewGuid().ToString(),
+                    "Google"
+                );
+
+                var userLogins = await _userManager.GetLoginsAsync(user);
+                if (!userLogins.Any(l => l.LoginProvider == "Google"))
+                {
+                    var loginResult = await _userManager.AddLoginAsync(user, info);
+                    if (!loginResult.Succeeded)
+                    {
+                        result.Message = "Failed to link Google account: " +
+                                         string.Join(", ", loginResult.Errors.Select(e => e.Description));
+                        return result;
+                    }
+                }
+
+                // Generate JWT token for the authenticated user
+                result.Result = await GenerateJwtToken(user, true);
+
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message ?? ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
+                StudyNestLogger.Instance.Error(ex);
+            }
+
+            return result;
         }
     }
 }

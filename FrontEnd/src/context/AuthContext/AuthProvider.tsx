@@ -18,9 +18,10 @@ export const AuthProvider = ({ children }: ProviderProps) => {
         async function checkAuth() {
             setIsAuthenticating(true);
             const accessToken = window.localStorage.getItem("accessToken") ?? "";
+            console.log(accessToken);
             try {
                 const { data } = await instance.get<ReturnResult<boolean>>("/Auth");
-
+                console.log(data);
                 if (data.result) {
                     dispatch(initAuthState(accessToken))
                 } else dispatch(resetAuthState());
