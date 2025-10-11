@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Navigate, useNavigate } from 'react-router-dom';
 import Spinner from '@/components/Spinner/Spinner';
 import useLogin from '@/hooks/authHook/useLogin';
 import { useReduxSelector } from '@/hooks/reduxHook/useReduxSelector';
-import { selectRole } from '@/store/authSlice';
+import { initAuthState, selectRole } from '@/store/authSlice';
 import { ERole } from '@/utils/enums/ERole';
+import GoogleLogin from '@/components/GoogleLogin/GoogleLogin';
+import { useReduxDispatch } from '@/hooks/reduxHook/useReduxDispatch';
 
 interface LoginFormInputs {
     username: string;
@@ -17,6 +19,7 @@ const Login: React.FC = () => {
     const navigate = useNavigate();
     const { login, isAuthenticating } = useLogin();
     const role = useReduxSelector(selectRole);
+    const dispatch = useReduxDispatch();
 
     const {
         register,
@@ -30,6 +33,27 @@ const Login: React.FC = () => {
             rememberMe: false
         }
     });
+
+    useEffect(() => {
+        // Extract the token from the URL
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
+
+        if (token) {
+            window.localStorage.setItem('accessToken', token);
+            dispatch(initAuthState(token));
+            switch (role) {
+                case ERole.User:
+                    navigate("/user/notes");
+                    break;
+                case ERole.Admin:
+                    navigate("/admin/dashboard");
+                    break;
+            }
+        } else {
+            console.log("No token found in URL");
+        }
+    }, []);
 
     // Handle role-based redirects
     switch (role) {
@@ -134,6 +158,7 @@ const Login: React.FC = () => {
                             'Login'
                         )}
                     </button>
+                    <GoogleLogin />
 
                     {/* Links */}
                     <div className="flex justify-between text-sm text-gray-600">

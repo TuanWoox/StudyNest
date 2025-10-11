@@ -1,6 +1,8 @@
 ﻿using Asp.Versioning; 
 using Asp.Versioning.ApiExplorer;
 using CloudinaryDotNet;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -20,6 +22,7 @@ using StudyNest.Common.Utils.Extensions;
 using StudyNest.Data;
 using StudyNest.Infrastructures.Hangfire;
 using StudyNest.Middleware;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
@@ -134,6 +137,7 @@ namespace StudyNest
                        .SetIsOriginAllowedToAllowWildcardSubdomains()
                        .AllowAnyMethod()
                        .AllowAnyHeader()
+                       .AllowCredentials()
                        .AllowCredentials();
                 });
             });
@@ -155,83 +159,103 @@ namespace StudyNest
         #region Configure Auth And JWT
         private void ConfigureAuthService(IServiceCollection services)
         {
-            // Configure the antiforgery service to expect the CSRF token in a custom header named "X-XSRF-TOKEN"
             services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN");
-            // Add authentication services and specify that JWT Bearer is the default scheme
-            services.AddAuthentication(x =>
+
+            // ✅ Configure multiple schemes properly
+            services.AddAuthentication(options =>
             {
-                // Set the default scheme used to authenticate users
-                x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                // Set the default scheme used when authentication fails (e.g., for returning 401 Unauthorized)
-                x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                // JWT is the default for API authentication
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+
+                // ✅ Cookie is ONLY for Google OAuth sign-in flow
+                options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            })
+            .AddCookie(options =>
+            {
+                // ✅ Cookie is only for temporary Google OAuth flow
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+                options.SlidingExpiration = false;
+            })
+            .AddGoogle(options =>
+            {
+                var clientId = Configuration["Authentication:Google:ClientId"];
+                if (clientId == null)
+                    throw new ArgumentNullException(nameof(clientId));
+
+                var clientSecret = Configuration["Authentication:Google:ClientSecret"];
+                if (clientSecret == null)
+                    throw new ArgumentNullException(nameof(clientSecret));
+
+                options.ClientId = clientId;
+                options.ClientSecret = clientSecret;
+                options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
+                // ✅ Request necessary scopes
+                options.Scope.Add("profile");
+                options.Scope.Add("email");
+
+                // ✅ Save tokens if needed
+                options.SaveTokens = true;
             })
             .AddJwtBearer(options =>
             {
-                // Configure how JWT tokens should be validated
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    // Require that the token contains a valid "iss" (issuer) claim
                     ValidateIssuer = false,
-                    // Require that the token contains a valid "aud" (audience) claim
                     ValidateAudience = false,
-                    // Ensure the token has not expired
                     ValidateLifetime = true,
-                    // Ensure the token was signed with a valid and trusted signing key
                     ValidateIssuerSigningKey = true,
-                    // Set the expected issuer (e.g., your application or auth server domain)
                     ValidIssuer = Configuration["Jwt:Issuer"],
-                    // Set the expected audience (e.g., the client app or API consumers)
                     ValidAudience = Configuration["Jwt:Audience"],
-                    // Set the secret key used to validate the signature of the token
                     IssuerSigningKey = new SymmetricSecurityKey(
-                        System.Text.Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                        Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
                 };
-                // Customize how the token is retrieved from incoming requests
+
                 options.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context =>
                     {
-                        // Try to read the token from the query string (useful for WebSockets or SignalR)
+                        // For SignalR/WebSocket
                         var accessToken = context.Request.Query["access_token"];
-                        // If a token is found in the query string, use it
                         if (!string.IsNullOrEmpty(accessToken))
                         {
                             context.Token = accessToken;
                         }
                         return Task.CompletedTask;
+                    },
+                    OnAuthenticationFailed = context =>
+                    {
+                        Console.WriteLine($"JWT Auth failed: {context.Exception.Message}");
+                        return Task.CompletedTask;
                     }
                 };
             });
-            // Configure Identity with strong password rules and email confirmation
-            IdentityBuilder builder = services.AddIdentityCore<ApplicationUser>(opt =>
+
+            // Rest of your Identity configuration
+            services.AddIdentityCore<ApplicationUser>(opt =>
             {
                 opt.Password.RequiredLength = 6;
                 opt.Password.RequireDigit = true;
                 opt.Password.RequireNonAlphanumeric = true;
                 opt.Password.RequireUppercase = true;
                 opt.Password.RequireLowercase = true;
-                // Require email confirmation before login
                 opt.SignIn.RequireConfirmedEmail = true;
-            }).AddRoles<ApplicationRole>();
-            // Add support for custom roles
-            builder = new IdentityBuilder(builder.UserType, typeof(ApplicationRole), builder.Services);
-            // Set token (e.g., email confirmation, reset password) expiration time
-            int expiredToken = int.TryParse(Configuration.GetSection("TokenLifespan").Value, out int parsedValue) ? parsedValue : 10;
-            builder.Services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromMinutes(expiredToken));
-            // Register Identity services
-            builder.AddEntityFrameworkStores<ApplicationDbContext>();
-            builder.AddRoleValidator<RoleValidator<ApplicationRole>>();
-            builder.AddRoleManager<RoleManager<ApplicationRole>>();
-            builder.AddSignInManager<SignInManager<ApplicationUser>>();
-            builder.AddTokenProvider<DataProtectorTokenProvider<ApplicationUser>>(TokenOptions.DefaultProvider);
-            // Configure SignalR for real-time communication
+            })
+            .AddRoles<ApplicationRole>()
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddRoleValidator<RoleValidator<ApplicationRole>>()
+            .AddRoleManager<RoleManager<ApplicationRole>>()
+            .AddSignInManager<SignInManager<ApplicationUser>>()
+            .AddDefaultTokenProviders();
+
             services.AddSignalR(hubOptions =>
             {
                 hubOptions.EnableDetailedErrors = true;
                 hubOptions.KeepAliveInterval = TimeSpan.FromSeconds(5);
             });
         }
-
         #endregion
 
         #region Configure Database
