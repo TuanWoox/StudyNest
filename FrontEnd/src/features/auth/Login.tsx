@@ -158,24 +158,28 @@ const Login: React.FC = () => {
                             'Login'
                         )}
                     </button>
-                    <GoogleLogin />
 
-                    {/* Links */}
-                    <div className="flex justify-between text-sm text-gray-600">
-                        <span
-                            className="cursor-pointer hover:text-gray-900 transition"
-                            onClick={() => navigate('/forgot-password')}
-                        >
-                            Forgot Password?
-                        </span>
-                        <span
-                            className="cursor-pointer hover:text-gray-900 transition"
-                            onClick={() => navigate('/register')}
-                        >
-                            Register
-                        </span>
-                    </div>
                 </form>
+
+                <div className="my-7 w-full">
+                    <GoogleLogin />
+                </div>
+
+                {/* Links */}
+                <div className="flex justify-between w-full text-sm text-gray-600">
+                    <span
+                        className="cursor-pointer hover:text-gray-900 transition"
+                        onClick={() => navigate('/forgot-password')}
+                    >
+                        Forgot Password?
+                    </span>
+                    <span
+                        className="cursor-pointer hover:text-gray-900 transition"
+                        onClick={() => navigate('/register')}
+                    >
+                        Register
+                    </span>
+                </div>
             </div>
         </div>
     );

@@ -3,7 +3,7 @@ import { FcGoogle } from "react-icons/fc";
 const GoogleLogin = () => {
 
     const handleLoginWithGoogle = () => {
-        const returnUrl = import.meta.env.VITE_RETURN_URL || 'http://localhost:80/login';
+        const returnUrl = import.meta.env.VITE_RETURN_URL;
         window.location.href = `http://localhost:5103/api/v1/Auth/Login/Google?returnUrl=${returnUrl}`;
     }
 

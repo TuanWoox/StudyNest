@@ -2,10 +2,14 @@ FROM node:22 AS build
 
 WORKDIR /app
 
-# Accept build arguments
+# Build arguments
+ARG VITE_API_URL
+ARG VITE_API_URL_BASIC
 ARG VITE_RETURN_URL
 
-# Set as environment variables during build
+# Environment variables for Vite
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_API_URL_BASIC=$VITE_API_URL_BASIC
 ENV VITE_RETURN_URL=$VITE_RETURN_URL
 
 COPY package.json ./

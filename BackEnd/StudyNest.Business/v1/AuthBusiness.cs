@@ -248,6 +248,7 @@ namespace StudyNest.Business.v1
                         return result;
                     }
 
+                    //Fetch again for not tracking the same entity
                     var createdUser = await _userManager.FindByNameAsync(email);
 
                     // Assign default user role
@@ -266,6 +267,9 @@ namespace StudyNest.Business.v1
                     "Google"
                 );
 
+                //Fetch again for not tracking the same entity
+                user = await _userManager.FindByEmailAsync(email);
+
                 var userLogins = await _userManager.GetLoginsAsync(user);
                 if (!userLogins.Any(l => l.LoginProvider == "Google"))
                 {
@@ -280,7 +284,6 @@ namespace StudyNest.Business.v1
 
                 // Generate JWT token for the authenticated user
                 result.Result = await GenerateJwtToken(user, true);
-
             }
             catch (Exception ex)
             {
