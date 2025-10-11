@@ -2,6 +2,12 @@ FROM node:22 AS build
 
 WORKDIR /app
 
+# Accept build arguments
+ARG VITE_RETURN_URL
+
+# Set as environment variables during build
+ENV VITE_RETURN_URL=$VITE_RETURN_URL
+
 COPY package.json ./
 COPY package-lock.json ./
 

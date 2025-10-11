@@ -16,8 +16,10 @@ services:
     build:
       context: ./Frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_RETURN_URL=http://localhost:80/login
     ports:
-      - "5173:80"
+      - "80:80"
     depends_on:
       - backend
     restart: always
