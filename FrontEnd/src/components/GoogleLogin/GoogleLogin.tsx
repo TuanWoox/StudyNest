@@ -4,7 +4,7 @@ const GoogleLogin = () => {
 
     const handleLoginWithGoogle = () => {
         const returnUrl = import.meta.env.VITE_RETURN_URL;
-        window.location.href = `http://localhost:5103/api/v1/Auth/Login/Google?returnUrl=${returnUrl}`;
+        window.location.href = `http://ec2-3-27-235-30.ap-southeast-2.compute.amazonaws.com:5103/api/v1/Auth/Login/Google?returnUrl=${returnUrl}`;
     }
 
     return (

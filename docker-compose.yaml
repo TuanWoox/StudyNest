@@ -17,7 +17,8 @@ services:
       args:
         VITE_API_URL: "/api/v1" # Maps to backend:5103/api/v1
         VITE_API_URL_BASIC: "/backend" # Maps to backend:5103
-        VITE_RETURN_URL: "http://localhost:80/login"
+        VITE_RETURN_URL: "http://ec2-3-27-235-30.ap-southeast-2.compute.amazonaws.com:80/login"
+
     ports:
       - "80:80"
     depends_on:

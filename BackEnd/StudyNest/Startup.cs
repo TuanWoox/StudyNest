@@ -1,4 +1,4 @@
-﻿using Asp.Versioning; 
+﻿using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -43,7 +43,7 @@ namespace StudyNest
 
         public void ConfigureServices(IServiceCollection services)
         {
- 
+
             services.AddEndpointsApiExplorer();
 
             AddAPIVersioning(services);
@@ -97,12 +97,18 @@ namespace StudyNest
             app.UseAuthorization();
             app.UseWebSockets();
 
+            app.UseCookiePolicy(new CookiePolicyOptions
+            {
+                MinimumSameSitePolicy = SameSiteMode.Lax, // Changed from None
+                Secure = CookieSecurePolicy.None // Allow HTTP cookies
+            });
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
                 endpoints.MapHub<Business.Hubs.QuizAttemptSnapshotHub>("/hub/quiz-attempt-snapshot");
             });
-            
+
 
             app.AddHangfireDashBoardSetup(Configuration);
             await InitData(app.ApplicationServices);
@@ -174,9 +180,14 @@ namespace StudyNest
             })
             .AddCookie(options =>
             {
-                // ✅ Cookie is only for temporary Google OAuth flow
                 options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
                 options.SlidingExpiration = false;
+
+                // ✅ HTTP-compatible settings
+                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
             })
             .AddGoogle(options =>
             {
@@ -192,12 +203,15 @@ namespace StudyNest
                 options.ClientSecret = clientSecret;
                 options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 
-                // ✅ Request necessary scopes
                 options.Scope.Add("profile");
                 options.Scope.Add("email");
-
-                // ✅ Save tokens if needed
                 options.SaveTokens = true;
+
+                // ✅ Critical: Configure correlation cookie for HTTP
+                options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP
+                options.CorrelationCookie.HttpOnly = true;
+                options.CorrelationCookie.IsEssential = true;
             })
             .AddJwtBearer(options =>
             {
@@ -367,7 +381,7 @@ namespace StudyNest
             }
         }
         #endregion
-    
+
     }
 
 }
