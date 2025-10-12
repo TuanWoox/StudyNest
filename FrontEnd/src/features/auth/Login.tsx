@@ -35,23 +35,25 @@ const Login: React.FC = () => {
     });
 
     useEffect(() => {
-        // Extract the token from the URL
         const params = new URLSearchParams(window.location.search);
         const token = params.get("token");
+        if (!token) {
+            params.delete("token");
+            return;
+        }
 
-        if (token) {
-            window.localStorage.setItem('accessToken', token);
-            dispatch(initAuthState(token));
-            switch (role) {
-                case ERole.User:
-                    navigate("/user/notes");
-                    break;
-                case ERole.Admin:
-                    navigate("/admin/dashboard");
-                    break;
-            }
-        } else {
-            console.log("No token found in URL");
+        window.localStorage.setItem("accessToken", token);
+        dispatch(initAuthState(token));
+
+        switch (role) {
+            case ERole.User:
+                navigate("/user/notes");
+                break;
+            case ERole.Admin:
+                navigate("/admin/dashboard");
+                break;
+            default:
+                break;
         }
     }, []);
 

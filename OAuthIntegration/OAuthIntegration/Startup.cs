@@ -1,33 +1,18 @@
 ﻿using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
-using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.OpenApi.Models;
-using Microsoft.Win32;
 using Newtonsoft.Json;
-using StudyNest.Business.Repository;
-using StudyNest.Business.v1;
-using StudyNest.Common.DbEntities.Identities;
-using StudyNest.Common.Interfaces;
-using StudyNest.Common.Utils.Configuration;
-using StudyNest.Common.Utils.Extensions;
-using StudyNest.Data;
-using StudyNest.Infrastructures.Hangfire;
-using StudyNest.Middleware;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+using OAuthIntegration.Business.Repository;
+using OAuthIntegration.Common.DbEntities.Identities;
+using OAuthIntegration.Data;
+using OAuthIntegration.Middleware;
 
 
-namespace StudyNest
+namespace OAuthIntegration
 {
     public class Startup
     {
@@ -40,39 +25,20 @@ namespace StudyNest
             Configuration = configuration;
             this.env = env;
         }
-
         public void ConfigureServices(IServiceCollection services)
         {
-
-            services.AddEndpointsApiExplorer();
-
+            services.AddAuthorization();
             AddAPIVersioning(services);
-
-            services.Configure<KestrelServerOptions>(options =>
-            {
-                options.AllowSynchronousIO = true;
-            });
-            services.Configure<IISServerOptions>(options =>
-            {
-                options.AllowSynchronousIO = true;
-            });
-
-            services.AddHangfireSetup(Configuration);
-            services.AddSignalR();
-            HangfireConfiguration.ConfigureGlobalFilters();
-
-            AddCorsDomain(services);
             AddControllerWithNewtonsoftJson(services);
+            AddCorsDomain(services);
             ConfigureAuthService(services);
             ConfigureDatabase(services);
-            ConfigurePolicy(services);
-            AddSwaggerService(services);
-            ConfigureCloudinary(services);
             ConfigureScopedServices(services);
+            AddSwaggerService(services);
         }
-
-        public async void Configure(IApplicationBuilder app, IWebHostEnvironment env, IApiVersionDescriptionProvider provider)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IApiVersionDescriptionProvider provider)
         {
+
             #region Development Configuration
             if (env.IsDevelopment())
             {
@@ -97,21 +63,10 @@ namespace StudyNest
             app.UseAuthorization();
             app.UseWebSockets();
 
-            app.UseCookiePolicy(new CookiePolicyOptions
-            {
-                MinimumSameSitePolicy = SameSiteMode.Lax, // Changed from None
-                Secure = CookieSecurePolicy.None // Allow HTTP cookies
-            });
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapHub<Business.Hubs.QuizAttemptSnapshotHub>("/hub/quiz-attempt-snapshot");
             });
-
-
-            app.AddHangfireDashBoardSetup(Configuration);
-            await InitData(app.ApplicationServices);
         }
 
         #region Add Api Versioning
@@ -143,7 +98,6 @@ namespace StudyNest
                        .SetIsOriginAllowedToAllowWildcardSubdomains()
                        .AllowAnyMethod()
                        .AllowAnyHeader()
-                       .AllowCredentials()
                        .AllowCredentials();
                 });
             });
@@ -162,7 +116,7 @@ namespace StudyNest
         }
         #endregion
 
-        #region Configure Auth And JWT
+        #region Configure Auth For Google Integration
         private void ConfigureAuthService(IServiceCollection services)
         {
             services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN");
@@ -170,24 +124,11 @@ namespace StudyNest
             // ✅ Configure multiple schemes properly
             services.AddAuthentication(options =>
             {
-                // JWT is the default for API authentication
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-
                 // ✅ Cookie is ONLY for Google OAuth sign-in flow
                 options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             })
             .AddCookie(options =>
             {
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
-                options.SlidingExpiration = false;
-
-                // ✅ HTTP-compatible settings
-                options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP
-                options.Cookie.HttpOnly = true;
-                options.Cookie.IsEssential = true;
                 // ✅ Cookie is only for temporary Google OAuth flow
                 options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
                 options.SlidingExpiration = false;
@@ -206,49 +147,12 @@ namespace StudyNest
                 options.ClientSecret = clientSecret;
                 options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 
-                // ✅ Critical: Configure correlation cookie for HTTP
-                options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP
-                options.CorrelationCookie.HttpOnly = true;
-                options.CorrelationCookie.IsEssential = true;
                 // ✅ Request necessary scopes
                 options.Scope.Add("profile");
                 options.Scope.Add("email");
+
                 // ✅ Save tokens if needed
                 options.SaveTokens = true;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = Configuration["Jwt:Issuer"],
-                    ValidAudience = Configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
-                };
-
-                options.Events = new JwtBearerEvents
-                {
-                    OnMessageReceived = context =>
-                    {
-                        // For SignalR/WebSocket
-                        var accessToken = context.Request.Query["access_token"];
-                        if (!string.IsNullOrEmpty(accessToken))
-                        {
-                            context.Token = accessToken;
-                        }
-                        return Task.CompletedTask;
-                    },
-                    OnAuthenticationFailed = context =>
-                    {
-                        Console.WriteLine($"JWT Auth failed: {context.Exception.Message}");
-                        return Task.CompletedTask;
-                    }
-                };
             });
 
             // Rest of your Identity configuration
@@ -267,12 +171,6 @@ namespace StudyNest
             .AddRoleManager<RoleManager<ApplicationRole>>()
             .AddSignInManager<SignInManager<ApplicationUser>>()
             .AddDefaultTokenProviders();
-
-            services.AddSignalR(hubOptions =>
-            {
-                hubOptions.EnableDetailedErrors = true;
-                hubOptions.KeepAliveInterval = TimeSpan.FromSeconds(5);
-            });
         }
         #endregion
 
@@ -285,7 +183,7 @@ namespace StudyNest
             {
                 options.UseNpgsql(connectionString, npgsqlOptions =>
                 {
-                    npgsqlOptions.MigrationsAssembly("StudyNest");
+                    npgsqlOptions.MigrationsAssembly("OAuthIntegration");
                     npgsqlOptions.EnableRetryOnFailure(
                         maxRetryCount: 5,
                         maxRetryDelay: TimeSpan.FromSeconds(30),
@@ -295,23 +193,10 @@ namespace StudyNest
         }
         #endregion
 
-        #region Configure Policy
-        private void ConfigurePolicy(IServiceCollection services)
-        {
-            // Allows access to HttpContext in services via IHttpContextAccessor outside controllers
-            services.AddHttpContextAccessor();
-            // Registers AutoMapper with the custom mapping profile. used to map DTO to real entity and vice versa
-            services.AddAutoMapper((serviceProvider, cfg) =>
-            {
-                cfg.LicenseKey = Configuration.GetValue<string>("AutoMapper:LicenseKey");
-            }, typeof(StudyNestMapper).Assembly);
-        }
-        #endregion
-
         #region Configure Dependency Injection
         private void ConfigureScopedServices(IServiceCollection services)
         {
-            services.RegisterStudyNestService();
+            services.RegisterOAuthService();
         }
         #endregion
 
@@ -350,42 +235,5 @@ namespace StudyNest
 
         }
         #endregion
-
-        #region Configure Cloudinary
-        public void ConfigureCloudinary(IServiceCollection services)
-        {
-            var cloudName = Configuration.GetValue<string>("CloudinarySettings:CloudName");
-            var apiKey = Configuration.GetValue<string>("CloudinarySettings:ApiKey");
-            var apiSecret = Configuration.GetValue<string>("CloudinarySettings:ApiSecret");
-            // Ensure none of them are null/empty
-            if (!new[] { cloudName, apiKey, apiSecret }.Any(string.IsNullOrEmpty))
-            {
-                var account = new Account(cloudName, apiKey, apiSecret);
-                var cloudinary = new Cloudinary(account);
-                services.AddSingleton(cloudinary);
-            }
-        }
-        #endregion
-
-        #region Init Default Data 
-        private async Task InitData(IServiceProvider serviceProvider)
-        {
-            try
-            {
-                using (var scope = serviceProvider.CreateScope())
-                {
-                    var userBusiness = scope.ServiceProvider.GetRequiredService<IUserBusiness>();
-                    await userBusiness.InitData();
-                }
-            }
-            catch (Exception ex)
-            {
-                StudyNestLogger.Instance.Error(ex);
-
-            }
-        }
-        #endregion
-
     }
-
 }

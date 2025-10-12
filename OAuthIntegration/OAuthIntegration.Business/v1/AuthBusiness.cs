@@ -1,31 +1,20 @@
-﻿using CloudinaryDotNet.Actions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using OAuthIntegration.Common.DbEntities.Identities;
+using OAuthIntegration.Common.Models.DTOs.CoreDTO;
 using Microsoft.IdentityModel.Tokens;
-using StudyNest.Common.DbEntities.Identities;
-using StudyNest.Common.Interfaces;
-using StudyNest.Common.Models.DTOs.CoreDTO;
-using StudyNest.Common.Models.DTOs.EntityDTO.User;
-using StudyNest.Common.Utils.Enums;
-using StudyNest.Common.Utils.Extensions;
-using StudyNest.Common.Utils.Helper;
-using StudyNest.Data;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Data;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
+using OAuthIntegration.Data;
+using System.IdentityModel.Tokens.Jwt;
+using OAuthIntegration.Common.Utils.Extensions;
+using OAuthIntegration.Common.Utils.Enum;
+using OAuthIntegration.Common.Utils.Helper;
+using OAuthIntegration.Common.Interface;
 
-namespace StudyNest.Business.v1
+namespace OAuthIntegration.Business.v1
 {
-    public class AuthBusiness : IAuthBusiness
+    public class AuthBusiness: IAuthBusiness
     {
         private readonly IConfiguration _configuration;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -45,113 +34,6 @@ namespace StudyNest.Business.v1
             _appDbContext = applicationDbContext;
         }
 
-        public async Task<ReturnResult<string>> Login(UserLogin model)
-        {
-            var result = new ReturnResult<string>();
-
-            try
-            {
-                ApplicationUser? user = null;
-
-                if (new EmailAddressAttribute().IsValid(model.UserNameOrEmail))
-                    user = await _userManager.FindByEmailAsync(model.UserNameOrEmail);
-                else
-                    user = await _userManager.FindByNameAsync(model.UserNameOrEmail);
-
-                if (user == null)
-                {
-                    result.Message = "User not found";
-                    return result;
-                }
-
-                var isPasswordValid = await _userManager.CheckPasswordAsync(user, model.Password);
-                if (!isPasswordValid)
-                {
-                    result.Message = "Password is incorrect";
-                    return result;
-                }
-
-                result.Result = await GenerateJwtToken(user, model.RememberMe);
-            }
-            catch (Exception ex)
-            {
-                result.Message = ex.Message ?? ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
-                StudyNestLogger.Instance.Error(ex);
-            }
-
-            return result;
-        }
-        public async Task<ReturnResult<string>> Register(UserRegister model)
-        {
-            var result = new ReturnResult<string>();
-            try
-            {
-                var existingRole = await _appDbContext.Roles
-                    .FirstOrDefaultAsync(r => r.Name == UserRoleEnum.user.ToString());
-                if (existingRole == null)
-                {
-                    result.Message = "User role not found";
-                    return result;
-                }
-
-                // Check if username or email already exists
-                if (await _userManager.FindByNameAsync(model.Username) != null)
-                {
-                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_EXIST, model.Username);
-                    return result;
-                }
-                if (await _userManager.FindByEmailAsync(model.Email) != null)
-                {
-                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_EXIST, model.Email);
-                    return result;
-                }
-
-                var newUser = new ApplicationUser
-                {
-                    UserName = model.Username,
-                    FullName = model.FullName,
-                    Email = model.Email,
-                    EmailConfirmed = true,
-                    DateOfBirth = DateTimeOffset.UtcNow,
-                    Deleted = false,
-                    DateCreated = DateTimeOffset.UtcNow
-                };
-
-                var createResult = await _userManager.CreateAsync(newUser, model.Password);
-                if (!createResult.Succeeded)
-                {
-                    result.Message = "Failed to create user: " + string.Join(", ", createResult.Errors.Select(e => e.Description));
-                    return result;
-                }
-
-                // Assign role
-                var roleResult = await _userManager.AddToRoleAsync(newUser, UserRoleEnum.user.ToString());
-                if (!roleResult.Succeeded)
-                {
-                    result.Message = "Failed to assign role: " + string.Join(", ", roleResult.Errors.Select(e => e.Description));
-                    return result;
-                }
-
-                // Confirm email
-                var token = await _userManager.GenerateEmailConfirmationTokenAsync(newUser);
-                var confirmResult = await _userManager.ConfirmEmailAsync(newUser, token);
-                if (!confirmResult.Succeeded)
-                {
-                    result.Message = "Email confirmation failed: " + string.Join(", ", confirmResult.Errors.Select(e => e.Description));
-                    return result;
-                }
-
-                // Registration succeeded
-                result.Result = await GenerateJwtToken(newUser, false);
-            }
-            catch (Exception ex)
-            {
-                result.Message = ex.Message ?? ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
-                StudyNestLogger.Instance.Error(ex);
-            }
-
-            return result;
-        }
         private async Task<string> GenerateJwtToken(ApplicationUser user, bool rememberMe)
         {
             var roles = await _userManager.GetRolesAsync(user);
@@ -253,7 +135,7 @@ namespace StudyNest.Business.v1
             catch (Exception ex)
             {
                 result.Message = ex.Message ?? ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
-                StudyNestLogger.Instance.Error(ex);
+                OauthIntegrationLogger.Instance.Error(ex);
             }
 
             return result;
