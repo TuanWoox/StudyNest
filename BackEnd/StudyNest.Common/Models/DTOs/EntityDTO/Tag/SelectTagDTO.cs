@@ -2,6 +2,7 @@
 using StudyNest.Common.Attributes;
 using StudyNest.Common.DbEntities.BaseEntity;
 using StudyNest.Common.DbEntities.Entities;
+using StudyNest.Common.Models.DTOs.EntityDTO.NoteTagDTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,6 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Tag
         [TrimmedRequired]
         public string Name { get; set; }
         //Mappping to Notes
-        public ICollection<NoteTag> NoteTags { get; set; } = new List<NoteTag>();
+        public ICollection<SelectNoteTagDTO> NoteTags { get; set; } = new List<SelectNoteTagDTO>();
     }
 }

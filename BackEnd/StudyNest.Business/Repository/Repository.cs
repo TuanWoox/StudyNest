@@ -183,6 +183,58 @@ namespace StudyNest.Business.Repository
             return result;
         }
 
+        //Used when TResponse need to be mapped after fetching data, especially when you want to filter inside the included entity
+        public async Task<PagedData<TResponse, TKey>> GetPagingAsyncMappedLater<TPage, TResponse>(IQueryable<TEntity> entities, TPage page, bool isExport = false)
+        where TResponse : IBaseKey<TKey>
+        where TPage : Page<TKey>
+        {
+            PagedData<TResponse, TKey> result = new PagedData<TResponse, TKey>(page);
+            try
+            {
+                //var customView = await customViewBusiness.GetCustomViewByID(page.ViewId);
+                var query = entities;
+                page.FormatFilter(ref query);
+                page.FormatOrder(ref query);
+                var generalQuery = query;
+                if (!isExport)
+                {
+                    if (page.Size != -1)
+                    {
+                        generalQuery = generalQuery
+                        .Skip(page.PageNumber * page.Size)
+                        .Take(page.Size);
+                    }
+                }
+                if (isExport)
+                {
+                    if (page.Selected != null && page.Selected.Count > 0)
+                    {
+                        generalQuery = generalQuery.Where(x => page.Selected.Contains(x.Id)).AsQueryable();
+                    }
+                }
+
+                var fetchedResult = await generalQuery.ToListAsync();
+                var tempResult = _mapper.Map<List<TResponse>>(fetchedResult);
+
+
+                if (tempResult != null && tempResult.Count > 0)
+                {
+                    result.Data = tempResult;
+                    result.Page.TotalElements = await query.CountAsync();
+                }
+                else
+                {
+                    result.Data = new List<TResponse>();
+                    result.Page.TotalElements = await query.CountAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return result;
+        }
+
         public async Task<ReturnResult<TEntity>> UpdateAsync<TUpdateDto>(TUpdateDto entity)
         where TUpdateDto : class, IBaseKey<TKey>
         {

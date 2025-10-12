@@ -41,32 +41,27 @@ namespace StudyNest.Business.v1
                 StudyNestLogger.Instance.Error(ex);
             }
             return result;
-        } 
+        }
         public async Task<ReturnResult<PagedData<SelectTagDTO, string>>> GetOwnPaging(Page<string> page)
         {
             ReturnResult<PagedData<SelectTagDTO, string>> result = new ReturnResult<PagedData<SelectTagDTO, string>>();
             try
             {
                 var query = _dbContext.Tags
-                                    .Include(t => t.NoteTags)
+                                    .Include(t => t.NoteTags.Where(t => t.Note.OwnerId == _userContext.UserId))
                                         .ThenInclude(nt => nt.Note)
-                                            .ThenInclude(n => n.Folder)   
+                                            .ThenInclude(n => n.Folder)
+                                   .Include(t => t.NoteTags.Where(t => t.Note.OwnerId == _userContext.UserId))
+                                        .ThenInclude(nt => nt.Note)
+                                            .ThenInclude(n => n.NoteTags)
+                                                .ThenInclude(nt => nt.Tag)
                                     .Where(t => t.NoteTags.Any(nt => nt.Note.OwnerId == _userContext.UserId))
-                                    .AsNoTracking()
                                     .AsQueryable();
-                result.Result = await _repository.GetPagingAsync<Page<string>,SelectTagDTO>(query,page);
-                foreach(var tag in result.Result.Data)
-                {
-                    foreach(var noteTag in tag.NoteTags)
-                    {
-                        noteTag.Note.NoteTags = await _dbContext.NoteTags.Where(x => x.NoteId == noteTag.Note.Id)
-                                                                        .Include(x => x.Tag)
-                                                                        .AsNoTracking()
-                                                                        .ToListAsync();
-                    }
-                }
+
+                result.Result = await _repository.GetPagingAsyncMappedLater<Page<string>, SelectTagDTO>(query, page);
+
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 StudyNestLogger.Instance.Error(ex);
             }

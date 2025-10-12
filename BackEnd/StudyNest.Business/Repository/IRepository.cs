@@ -15,6 +15,9 @@ namespace StudyNest.Business.Repository
         public Task<PagedData<TResponse, TKey>> GetPagingAsync<TPage, TResponse>(IQueryable<TEntity> entities, TPage page, bool isExport = false)
             where TResponse : IBaseKey<TKey>
             where TPage : Page<TKey>;
+        public Task<PagedData<TResponse, TKey>> GetPagingAsyncMappedLater<TPage, TResponse>(IQueryable<TEntity> entities, TPage page, bool isExport = false)
+           where TResponse : IBaseKey<TKey>
+           where TPage : Page<TKey>;
         public Task<ReturnResult<TEntity>> CreateAsync<TCreateDto>(TCreateDto entity)
         where TCreateDto : class, IBaseKey<TKey>;
         public Task<ReturnResult<TEntity>> UpdateAsync<TUpdateDto>(TUpdateDto entity)
