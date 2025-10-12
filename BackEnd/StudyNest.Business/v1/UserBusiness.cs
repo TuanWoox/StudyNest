@@ -67,11 +67,10 @@ namespace StudyNest.Business.v1
             try
             {
                 StudyNestLogger.Instance.Debug($"InitUserData for role: {role}");
-            
+
                 // Check if role exists
                 var existingRole = await _context.Roles
                     .FirstOrDefaultAsync(r => r.Name == role.ToString());
-
                 if (existingRole == null)
                 {
                     throw new InvalidOperationException(
@@ -102,34 +101,20 @@ namespace StudyNest.Business.v1
                 };
 
                 string password = $"{char.ToUpper(username[0])}{username.Substring(1)}@123";
-
                 var result = await _userManager.CreateAsync(newUser, password);
+
                 if (!result.Succeeded)
                 {
                     var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                     throw new InvalidOperationException($"Failed to create user: {errors}");
                 }
 
-                // Re-fetch user by username to ensure tracking consistency
-                var createdUser = await _userManager.FindByNameAsync(username);
-                if (createdUser == null)
-                {
-                    throw new InvalidOperationException($"User '{username}' could not be retrieved after creation.");
-                }
-
-                // Assign role
-                await _userManager.AddToRoleAsync(createdUser, role.ToString());
-
-                // Re-fetch by email to ensure latest tracking state
-                createdUser = await _userManager.FindByEmailAsync($"{username}@primas.net");
-                if (createdUser == null)
-                {
-                    throw new InvalidOperationException($"User '{username}' could not be retrieved by email after role assignment.");
-                }
+                // Assign role (newUser is already tracked by UserManager after CreateAsync)
+                await _userManager.AddToRoleAsync(newUser, role.ToString());
 
                 // Confirm email
-                var token = await _userManager.GenerateEmailConfirmationTokenAsync(createdUser);
-                await _userManager.ConfirmEmailAsync(createdUser, token);
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(newUser);
+                await _userManager.ConfirmEmailAsync(newUser, token);
 
                 StudyNestLogger.Instance.Debug(
                     $"User '{username}' created, assigned role '{role}', and email confirmed successfully."

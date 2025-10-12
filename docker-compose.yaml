@@ -6,8 +6,17 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5103
+    restart: always
+
+  oauth:
+    build:
+      context: ./OAuthIntegration
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5181
     ports:
-      - "5103:5103"
+      - "5181:5181"
     restart: always
 
   frontend:
@@ -18,9 +27,10 @@ services:
         VITE_API_URL: "/api/v1" # Maps to backend:5103/api/v1
         VITE_API_URL_BASIC: "/backend" # Maps to backend:5103
         # Can't use nginx forward, it says redirect URI, fix laters when releases
-        VITE_API_GOOGLE_AUTH_API: "http://localhost:5103/api/v1/Auth/Login/Google?returnUrl=http://localhost:80/login"
+        VITE_API_GOOGLE_AUTH_API: "http://localhost:5181/api/v1/Auth/Login/Google?returnUrl=http://localhost:80/login"
     ports:
       - "80:80"
     depends_on:
       - backend
+      - oauth
     restart: always
