@@ -27,9 +27,10 @@ services:
         VITE_API_URL: "/api/v1" # Maps to backend:5103/api/v1
         VITE_API_URL_BASIC: "/backend" # Maps to backend:5103
         # Can't use nginx forward, it says redirect URI, fix laters when releases
-        VITE_API_GOOGLE_AUTH_API: "http://ec2-3-27-235-30.ap-southeast-2.compute.amazonaws.com:5181/api/v1/Auth/Login/Google?returnUrl=http://ec2-3-27-235-30.ap-southeast-2.compute.amazonaws.com:80/login"
+        VITE_API_GOOGLE_AUTH_API: "https://ec2-13-239-242-173.ap-southeast-2.compute.amazonaws.com:5181/api/v1/Auth/Login/Google?returnUrl=https://ec2-13-239-242-173.ap-southeast-2.compute.amazonaws.com/login"
     ports:
       - "80:80"
+      - "443:443"
     depends_on:
       - backend
       - oauth

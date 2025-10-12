@@ -47,7 +47,6 @@ import MultiBlockSelectionPlugin from 'editorjs-multiblock-selection-plugin';
 import instance from '@/config/axiosConfig';
 import { ImageToolTune } from 'editorjs-image-resize-crop';
 
-const baseURL = import.meta.env.VITE_API_URL
 
 export interface InputForCreateEditor {
     holderElementId?: string;
@@ -94,7 +93,7 @@ export function useCreateEditor({
                                 uploadByFile(file) {
                                     const formData = new FormData();
                                     formData.append('file', file);
-                                    return instance.post(`${baseURL}/Image`, formData, {
+                                    return instance.post(`/Image`, formData, {
                                         headers: { 'Content-Type': 'multipart/form-data' },
                                     }).then(({ data }) => ({
                                         success: data?.result?.success,

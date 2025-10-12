@@ -129,6 +129,14 @@ namespace OAuthIntegration
             })
             .AddCookie(options =>
             {
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+                options.SlidingExpiration = false;
+
+                // ✅ HTTP-compatible settings
+                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
                 // ✅ Cookie is only for temporary Google OAuth flow
                 options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
                 options.SlidingExpiration = false;
@@ -147,10 +155,14 @@ namespace OAuthIntegration
                 options.ClientSecret = clientSecret;
                 options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 
+                // ✅ Critical: Configure correlation cookie for HTTP
+                options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP
+                options.CorrelationCookie.HttpOnly = true;
+                options.CorrelationCookie.IsEssential = true;
                 // ✅ Request necessary scopes
                 options.Scope.Add("profile");
                 options.Scope.Add("email");
-
                 // ✅ Save tokens if needed
                 options.SaveTokens = true;
             });

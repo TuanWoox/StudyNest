@@ -27,16 +27,25 @@ FROM nginx:alpine
 # Remove default nginx files
 RUN rm -rf /usr/share/nginx/html/*
 
+# Create SSL directory
+RUN mkdir -p /etc/nginx/ssl
+
+# Copy SSL certificates
+COPY ./HttpsKey/server.crt /etc/nginx/ssl/server.crt
+COPY ./HttpsKey/server.key /etc/nginx/ssl/server.key
+
 # Copy built files with proper permissions
 COPY --from=build --chown=nginx:nginx /app/dist /usr/share/nginx/html
 
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Fix permissions explicitly
+# Fix permissions
 RUN chmod -R 755 /usr/share/nginx/html && \
-    chown -R nginx:nginx /usr/share/nginx/html
+    chown -R nginx:nginx /usr/share/nginx/html && \
+    chmod 644 /etc/nginx/ssl/server.crt && \
+    chmod 600 /etc/nginx/ssl/server.key
 
-EXPOSE 80
+EXPOSE 80 443
 
 CMD ["nginx", "-g", "daemon off;"]
