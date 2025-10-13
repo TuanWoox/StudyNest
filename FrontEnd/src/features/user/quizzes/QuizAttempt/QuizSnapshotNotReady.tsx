@@ -8,7 +8,7 @@ const QuizSnapshotNotReady = () => {
 
         <div className="mx-auto my-auto px-4 sm:px-6 lg:px-8 py-20">
             <Card
-                className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl shadow-xl"
+                className="w-full shadow-xl"
                 style={{
                     borderRadius: '16px',
                 }}
@@ -22,8 +22,10 @@ const QuizSnapshotNotReady = () => {
                         indicator={
                             <SyncOutlined
                                 spin
-                                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
-                                style={{ color: '#1890ff' }}
+                                style={{
+                                    color: '#1890ff',
+                                    fontSize: '3rem',
+                                }}
                             />
                         }
                         size="large"
@@ -42,8 +44,7 @@ const QuizSnapshotNotReady = () => {
                             Quiz Snapshot In Progress
                         </Title>
 
-                        <Paragraph
-                            className="text-sm sm:text-base"
+                        <span className="text-sm sm:text-base xl:text-2xl"
                             style={{
                                 color: '#666',
                                 maxWidth: '500px',
@@ -52,17 +53,17 @@ const QuizSnapshotNotReady = () => {
                             }}
                         >
                             Your quiz snapshot is currently being generated. This process typically takes 1-2 minutes.
-                        </Paragraph>
+                        </span>
                     </div>
 
                     <Alert
                         message={
-                            <span className="text-sm sm:text-base font-semibold ">
+                            <span className="text-sm sm:text-base xl:text-2xl font-semibold ">
                                 Processing Your Data
                             </span>
                         }
                         description={
-                            <span className="text-xs sm:text-sm block mt-1">
+                            <span className="text-xs sm:text-sm xl:text-xl block mt-1">
                                 This page will refresh automatically once ready. You may also navigate away and return later.
                             </span>
                         }
@@ -76,12 +77,13 @@ const QuizSnapshotNotReady = () => {
                         }}
                     />
 
-                    <Paragraph
-                        type="secondary"
-                        className="text-xs sm:text-sm !mt-4 !mb-0"
+                    <span className="text-sm sm:text-base xl:text-2xl !mt-4 !mb-0"
+                        style={{
+                            color: '#666',
+                        }}
                     >
                         Thank you for your patience
-                    </Paragraph>
+                    </span>
                 </Space>
             </Card>
         </div>

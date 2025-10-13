@@ -51,7 +51,11 @@ const QuizView = () => {
     }, [data, id, dispatch, quizAttempt.quizAttemptSnapshot, quizAttempt.quizId, notificationConnection, refreshQuizAttempt])
 
     if (isLoading) return <Spinner></Spinner>
-    return <QuizSnapshotNotReady></QuizSnapshotNotReady>
+    return (
+        <div className="w-full lg:max-w-9/10 mx-auto p-4">
+            <QuizSnapshotNotReady></QuizSnapshotNotReady>
+        </div>
+    )
     // return (
     //     <div className="mx-auto mt-12 max-w-4xl">
     //         <QuizHeader />
