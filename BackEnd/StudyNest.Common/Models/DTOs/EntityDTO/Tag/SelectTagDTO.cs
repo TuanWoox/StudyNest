@@ -23,7 +23,7 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Tag
     // 5 types below support for select NOTE for better performance && reading
 
     [AutoMap(typeof(NoteTag), ReverseMap = true, PreserveReferences = true)]
-    public class TagNoteRelationDTO
+    public class TagNoteRelationDTO : BaseEntity<string>
     {
         public string NoteId { get; set; }
         public TagNoteSummaryDTO Note { get; set; }
@@ -48,21 +48,21 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Tag
     }
 
     [AutoMap(typeof(NoteTag), ReverseMap = true, PreserveReferences = true)]
-    public class NestedNoteTagRelationDTO
+    public class NestedNoteTagRelationDTO : BaseEntity<string>
     {
         public string TagId { get; set; }
         public NestedTagSummaryDTO Tag { get; set; }
     }
 
     [AutoMap(typeof(DbEntities.Entities.Tag), ReverseMap = true, PreserveReferences = true)]
-    public class NestedTagSummaryDTO
+    public class NestedTagSummaryDTO : BaseEntity<string>
     {
         [TrimmedRequired]
         public string Name { get; set; }
     }
 
     [AutoMap(typeof(DbEntities.Entities.Folder), ReverseMap = true, PreserveReferences = true)]
-    public class NoteFolderSummaryDTO
+    public class NoteFolderSummaryDTO : BaseEntity<string>
     {
         public string FolderName { get; set; }
         public string OwnerId { get; set; }

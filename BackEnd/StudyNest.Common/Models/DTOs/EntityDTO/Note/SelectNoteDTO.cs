@@ -26,21 +26,21 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Note
 
     // 3 types below support for select NOTE for better performance 
     [AutoMap(typeof(DbEntities.Entities.Folder), ReverseMap = true, PreserveReferences = true)]
-    public class NoteFolderSummaryDTO
+    public class NoteFolderSummaryDTO : BaseEntity<string>
     {
         public string FolderName { get; set; }
         public string OwnerId { get; set; }
     }
 
     [AutoMap(typeof(NoteTag), ReverseMap = true, PreserveReferences = true)]
-    public class NoteTagRelationDTO
+    public class NoteTagRelationDTO : BaseEntity<string>
     {
         public string TagId { get; set; }
         public TagSummaryDTO Tag { get; set; }
     }
 
     [AutoMap(typeof(DbEntities.Entities.Tag), ReverseMap = true, PreserveReferences = true)]
-    public class TagSummaryDTO
+    public class TagSummaryDTO : BaseEntity<string>
     {
         [TrimmedRequired]
         public string Name { get; set; }

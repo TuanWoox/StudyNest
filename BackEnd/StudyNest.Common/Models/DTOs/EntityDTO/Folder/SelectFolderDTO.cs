@@ -34,21 +34,21 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Folder
     }
 
     [AutoMap(typeof(DbEntities.Entities.Folder), ReverseMap = true, PreserveReferences = true)]
-    public class NestedFolderSummaryDTO
+    public class NestedFolderSummaryDTO : BaseEntity<string>
     {
         public string FolderName { get; set; }
         public string OwnerId { get; set; }
     }
 
     [AutoMap(typeof(NoteTag), ReverseMap = true, PreserveReferences = true)]
-    public class NoteTagRelationDTO
+    public class NoteTagRelationDTO : BaseEntity<string>
     {
         public string TagId { get; set; }
         public TagSummaryDTO Tag { get; set; }
     }
 
     [AutoMap(typeof(DbEntities.Entities.Tag), ReverseMap = true, PreserveReferences = true)]
-    public class TagSummaryDTO
+    public class TagSummaryDTO : BaseEntity<string>
     {
         [TrimmedRequired]
         public string Name { get; set; }
