@@ -75,8 +75,12 @@ namespace StudyNest.Business.v1
                 }
                 else
                 {
-                    //Return the appropriate message if not founds
-                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz snapshot", quizId);
+                    var fetchedQuiz = await _context.Quizzes.Where(x => x.Id == quizId).FirstOrDefaultAsync();
+                    if(!(fetchedQuiz != null && fetchedQuiz.IsBeingConvertToSnapShot == true))
+                    {
+                        //Return the appropriate message if not founds
+                        result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz snapshot", quizId);
+                    }
                 }
             }
             catch (Exception ex)
@@ -111,7 +115,10 @@ namespace StudyNest.Business.v1
                     existingQuiz.IsBeingConvertToSnapShot = false;
                     _context.Quizzes.Update(existingQuiz);
                     await _context.SaveChangesAsync();
+                    //This is used to push notification to the user that the snapshot is created
                     await _snapshotHub.Clients.User(existingQuiz.OwnerId).CompleteCreateQuizAttemptSnapshot(new { quizId = existingQuiz.Id, quiztitle = existingQuiz.Title });
+                    //This is used to make the frontend reload the page if the user is currently on the quiz attempt page
+                    await _snapshotHub.Clients.User(existingQuiz.OwnerId).ReloadQuizAttemptSnapshot(new { quizId = existingQuiz.Id });
                 }
                 else
                 {

@@ -11,13 +11,15 @@ import { QuizNavigation } from "./QuizNavigation";
 import { useSubmitQuizAttempt } from "@/hooks/quizAttempt/useSubmitQuizAttempt";
 import Spinner from "@/components/Spinner/Spinner";
 import QuizSnapshotNotReady from "./QuizSnapshotNotReady";
+import { useQuizAttemptSnapshotHub } from "@/context/QuizSnapshotHubContext/QuizAttemptSnapshotHubContextValue";
 
 const QuizView = () => {
     const { id } = useParams<{ id: string }>();
-    const { data, isLoading } = useGetOneForAttempting(id || "", { enabled: !!id });
+    const { data, isLoading, refetch: refreshQuizAttempt } = useGetOneForAttempting(id || "", { enabled: !!id });
     const quizAttempt = useReduxSelector(selectQuizAttempt);
     const dispatch = useReduxDispatch();
     const { submitAnswer, isLoading: isSubmitting } = useSubmitQuizAttempt();
+    const { notificationConnection } = useQuizAttemptSnapshotHub();
 
     function onPrevious() {
         dispatch(previousQuestion())
@@ -38,21 +40,29 @@ const QuizView = () => {
                 questionId: data?.quizQuestionsParsed[0]?.id ?? ""
             }));
         }
-    }, [data, id, dispatch, quizAttempt.quizAttemptSnapshot, quizAttempt.quizId])
+        notificationConnection?.on('ReloadQuizAttemptSnapshot', ({ quizId }) => {
+            if (id === quizId) {
+                refreshQuizAttempt()
+            }
+        })
+        return () => {
+            notificationConnection?.off('ReloadQuizAttemptSnapshot');
+        }
+    }, [data, id, dispatch, quizAttempt.quizAttemptSnapshot, quizAttempt.quizId, notificationConnection, refreshQuizAttempt])
 
     if (isLoading) return <Spinner></Spinner>
-    if (!data) return <QuizSnapshotNotReady></QuizSnapshotNotReady>
-    return (
-        <div className="mx-auto mt-12 max-w-4xl">
-            <QuizHeader />
-            <QuizProgress />
-            <QuestionCard />
-            <QuizNavigation
-                onPrevious={onPrevious} onNext={onNext}
-                onSubmit={onSubmit} isSubmitting={isSubmitting}
-            />
-        </div>
-    )
+    return <QuizSnapshotNotReady></QuizSnapshotNotReady>
+    // return (
+    //     <div className="mx-auto mt-12 max-w-4xl">
+    //         <QuizHeader />
+    //         <QuizProgress />
+    //         <QuestionCard />
+    //         <QuizNavigation
+    //             onPrevious={onPrevious} onNext={onNext}
+    //             onSubmit={onSubmit} isSubmitting={isSubmitting}
+    //         />
+    //     </div>
+    // )
 };
 
 export default QuizView;
