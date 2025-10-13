@@ -6,6 +6,7 @@ import { QuizAttemptSnapshotHubContext } from "./QuizAttemptSnapshotHubContextVa
 import { toast } from "sonner";
 import { useReduxSelector } from "@/hooks/reduxHook/useReduxSelector";
 import { selectRole } from "@/store/authSlice";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ProviderProps {
     children: ReactNode;
@@ -16,7 +17,7 @@ const baseURL = import.meta.env.VITE_API_URL_BASIC;
 export const QuizAttemptSnapshotHubProvider = ({ children }: ProviderProps) => {
 
     const role = useReduxSelector(selectRole);
-
+    const queryClient = useQueryClient();
     const [notificationConnection, setNotificationConnection] =
         useState<signalR.HubConnection | null>(null);
 
@@ -41,10 +42,11 @@ export const QuizAttemptSnapshotHubProvider = ({ children }: ProviderProps) => {
                 await connection.start();
 
                 connection.on(
-                    'CompleteCreateQuizAttemptSnapshot', ({ quizId, quiztitle }) => {
+                    'CompleteCreateQuizAttemptSnapshot', async ({ quizId, quiztitle }) => {
                         toast.success(
                             `Snapshot for quiz "${quiztitle}" (ID: ${quizId}) created successfully! You can now start your test.`
                         );
+                        await queryClient.invalidateQueries({ queryKey: ["quizzes"] });
                     }
                 );
 
