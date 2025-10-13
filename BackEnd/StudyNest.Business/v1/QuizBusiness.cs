@@ -109,6 +109,7 @@ namespace StudyNest.Business.v1
             {
                 var query = _context.Quizzes
                     .Where(n => n.OwnerId == _userContext.UserId)
+                    .Include(x => x.Questions)
                     .AsNoTracking()
                     .OrderByDescending(q => q.DateCreated ?? DateTimeOffset.MinValue)
                     .AsQueryable();

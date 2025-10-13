@@ -58,7 +58,7 @@ namespace StudyNest.Business.v1
                                     .Where(t => t.NoteTags.Any(nt => nt.Note.OwnerId == _userContext.UserId))
                                     .AsQueryable();
 
-                result.Result = await _repository.GetPagingAsyncMappedLater<Page<string>, SelectTagDTO>(query, page);
+                result.Result = await _repository.GetPagingAsync<Page<string>, SelectTagDTO>(query, page);
 
             }
             catch (Exception ex)
