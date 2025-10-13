@@ -134,6 +134,8 @@ namespace StudyNest.Business.v1
                         int totalQuestions = parsedQuestions.Count;
                         int correctAnswers = existingAttempt.QuizAttemptAnswers.Where(x => x.IsCorrect).Count();
                         existingAttempt.Score = (int)Math.Round((double)(correctAnswers * 100) / totalQuestions);
+                        // Mark the attempt as completed
+                        _dbContext.QuizAttempts.Update(existingAttempt);
                         // Update the attempt as completed
                         if (await _dbContext.SaveChangesAsync() > 0)
                         {
