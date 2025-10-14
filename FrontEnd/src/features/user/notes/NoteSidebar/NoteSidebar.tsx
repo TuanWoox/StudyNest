@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Input, Button, Space, Tooltip, Collapse, Dropdown, Menu } from 'antd';
+import { Input, Button, Space, Tooltip, Collapse, Dropdown, Menu, Empty } from 'antd';
 import { SearchOutlined, PlusOutlined, FileTextOutlined, FolderOutlined, TagsOutlined, EditOutlined, DeleteOutlined, MoreOutlined } from '@ant-design/icons';
 import NoteCard from './NoteCard';
 import { Note, Folder, Tag, NoteTag } from '@/types/note/notes';
@@ -11,7 +11,7 @@ interface NoteSidebarProps {
     tags: Tag[];
     selectedNote: Note | null;
     handleOpenEditor: (note: Note) => void;
-    handleCreateNote: () => void;
+    handleCreateNote: (folder?: Folder | undefined) => void;
     setFolderModalMode: React.Dispatch<React.SetStateAction<"delete" | "create" | "update">>;
     setIsModalFolderVisible: React.Dispatch<React.SetStateAction<boolean>>;
     setSelectedFolder: React.Dispatch<React.SetStateAction<Folder | null>>;
@@ -57,6 +57,14 @@ const NoteSidebar: React.FC<NoteSidebarProps> = ({
 
                 items={[
                     {
+                        key: 'create-note',
+                        icon: <PlusOutlined />,
+                        label: 'Create Note',
+                        onClick: () => {
+                            handleCreateNote(folder);
+                        },
+                    },
+                    {
                         key: 'edit',
                         icon: <EditOutlined />,
                         label: 'Edit Folder',
@@ -84,11 +92,19 @@ const NoteSidebar: React.FC<NoteSidebarProps> = ({
         return {
             key: folder.id,
             label: (
-                <div className="flex justify-between items-center w-full">
-                    <div style={{ fontWeight: 600, fontSize: 16 }}>
-                        <FolderOutlined /> {folder.folderName}
+                <div className="flex justify-between items-center w-full overflow-hidden">
+                    {/* Folder name */}
+                    <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+                        <FolderOutlined className="flex-shrink-0" />
+                        <Tooltip title={folder.folderName} placement="topLeft">
+                            <span className="text-base font-semibold line-clamp-1 cursor-pointer hover:text-blue-600 transition-colors">
+                                {folder.folderName}
+                            </span>
+                        </Tooltip>
                     </div>
-                    <div className="flex items-center gap-2">
+
+                    {/* Notes count + menu */}
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                         <span style={{ fontSize: 12, color: '#999' }}>
                             {folder.notes?.length || 0} notes
                         </span>
@@ -101,11 +117,12 @@ const NoteSidebar: React.FC<NoteSidebarProps> = ({
                                     background: 'transparent',
                                     color: darkMode ? '#E2E8F0' : '#111827',
                                 }}
-                                onClick={(e) => e.stopPropagation()} // tránh click vào collapse
+                                onClick={(e) => e.stopPropagation()}
                             />
                         </Dropdown>
                     </div>
                 </div>
+
             ),
             children: (folder.notes && folder.notes.length > 0) ? (
                 <div className="grid gap-4
@@ -121,6 +138,7 @@ const NoteSidebar: React.FC<NoteSidebarProps> = ({
                             isSelected={selectedNote?.id === note.id}
                             onSelect={() => handleOpenEditor(note)}
                             onDelete={handleDeleteNote}
+                            isDeleteAvailable={true}
                         />
                     ))}
                 </div>
@@ -165,6 +183,7 @@ const NoteSidebar: React.FC<NoteSidebarProps> = ({
                             isSelected={selectedNote?.id === noteTag.note.id}
                             onSelect={() => handleOpenEditor(noteTag.note!)}
                             onDelete={handleDeleteNote}
+                            isDeleteAvailable={true}
                         />
                     ) : null
                 ))}
@@ -194,7 +213,7 @@ const NoteSidebar: React.FC<NoteSidebarProps> = ({
             }}>
             {/* Actions */}
             <div className="flex justify-between items-center mb-4">
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateNote}>New</Button>
+                <Button type="primary" icon={<PlusOutlined />} onClick={() => handleCreateNote()}>New</Button>
                 <Space size="middle">
                     <Tooltip
                         title="All Notes"
@@ -260,22 +279,46 @@ const NoteSidebar: React.FC<NoteSidebarProps> = ({
             {/* Notes / Folders / Tags */}
             <div>
                 {viewMode === "all" && (
-                    <div className="grid gap-4
-                    sm:grid-cols-1
-                    md:grid-cols-2
-                    lg:grid-cols-3
-                    xl:grid-cols-4">
-                        {filteredNotes.map((note) => (
-                            <NoteCard
-                                key={note.id}
-                                note={note}
-                                darkMode={darkMode}
-                                isSelected={selectedNote?.id === note.id}
-                                onSelect={() => handleOpenEditor(note)}
-                                onDelete={handleDeleteNote}
-                            />
-                        ))}
-                    </div>
+                    filteredNotes.length === 0 ? (
+                        <Empty
+                            description="No notes found. Create your first note!"
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                minHeight: 200,
+                                marginTop: 40,
+                            }}
+                        >
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={() => handleCreateNote()}
+                            >
+                                Create New Note
+                            </Button>
+                        </Empty>
+                    ) : (
+                        <div className="grid gap-4
+                            sm:grid-cols-1
+                            md:grid-cols-2
+                            lg:grid-cols-3
+                            xl:grid-cols-4">
+                            {filteredNotes.map((note) => (
+                                <NoteCard
+                                    key={note.id}
+                                    note={note}
+                                    darkMode={darkMode}
+                                    isSelected={selectedNote?.id === note.id}
+                                    onSelect={() => handleOpenEditor(note)}
+                                    onDelete={handleDeleteNote}
+                                    isDeleteAvailable={true}
+                                />
+                            ))}
+                        </div>
+                    )
                 )}
 
                 {viewMode === "folder" && (
@@ -321,14 +364,31 @@ const NoteSidebar: React.FC<NoteSidebarProps> = ({
                                 Add Folder
                             </Button>
                         </div>
-                        <Collapse
-                            ghost
-                            expandIconPosition="end"
-                            style={{
-                                backgroundColor: 'transparent',
-                                borderRadius: '8px',
-                            }}
-                            items={folderItems} />
+                        {(filteredFolders.length === 0 || filteredFolders.every(f => !f.notes || f.notes.length === 0)) ? (
+                            <Empty
+                                description="No notes in any folder"
+                                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                style={{ minHeight: 200, marginTop: 40 }}
+                            >
+                                <Button
+                                    type="primary"
+                                    icon={<PlusOutlined />}
+                                    onClick={() => handleCreateNote()}
+                                >
+                                    Create New Note
+                                </Button>
+                            </Empty>
+                        ) : (
+                            <Collapse
+                                ghost
+                                expandIconPosition="end"
+                                style={{
+                                    backgroundColor: 'transparent',
+                                    borderRadius: '8px',
+                                }}
+                                items={folderItems}
+                            />
+                        )}
                     </>
                 )}
 
@@ -337,14 +397,31 @@ const NoteSidebar: React.FC<NoteSidebarProps> = ({
                         <div className="flex justify-between items-center mb-2">
                             <h3 style={{ fontWeight: 625, fontSize: '18px' }}><TagsOutlined /> Tags</h3>
                         </div>
-                        <Collapse
-                            ghost
-                            expandIconPosition="end"
-                            style={{
-                                backgroundColor: darkMode ? "#0f0f0f" : "#FFFFFF",
-                                borderRadius: "8px",
-                            }}
-                            items={tagItems} />
+                        {(filteredTags.length === 0 || filteredTags.every(t => !t.noteTags || t.noteTags.length === 0)) ? (
+                            <Empty
+                                description="No notes with any tag"
+                                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                style={{ minHeight: 200, marginTop: 40 }}
+                            >
+                                <Button
+                                    type="primary"
+                                    icon={<PlusOutlined />}
+                                    onClick={() => handleCreateNote()}
+                                >
+                                    Create New Note
+                                </Button>
+                            </Empty>
+                        ) : (
+                            <Collapse
+                                ghost
+                                expandIconPosition="end"
+                                style={{
+                                    backgroundColor: darkMode ? "#0f0f0f" : "#FFFFFF",
+                                    borderRadius: "8px",
+                                }}
+                                items={tagItems}
+                            />
+                        )}
                     </>
                 )}
             </div>

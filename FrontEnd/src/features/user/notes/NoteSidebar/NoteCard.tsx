@@ -10,6 +10,7 @@ interface NoteCardProps {
     isSelected: boolean;
     onSelect: () => void;
     onDelete: (id: string) => void;
+    isDeleteAvailable: boolean;
 }
 
 const NoteCard: React.FC<NoteCardProps> = ({
@@ -18,6 +19,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
     isSelected,
     onSelect,
     onDelete,
+    isDeleteAvailable = false
 }) => {
     // Lấy tags từ note.noteTags[].tag
     const tags = note.noteTags?.map(nt => nt.tag) || [];
@@ -56,27 +58,34 @@ const NoteCard: React.FC<NoteCardProps> = ({
             }}
         >
             {/* 🗑️ Nút xóa ở góc trên phải */}
-            <div className="absolute top-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
-                <Popconfirm
-                    title="Delete this note?"
-                    description="Are you sure you want to delete this note permanently?"
-                    onConfirm={() => onDelete(note.id)}
-                    okText="Delete"
-                    cancelText="Cancel"
-                    okButtonProps={{ danger: true }}
-                >
-                    <Tooltip title="Delete note">
-                        <Button
-                            type="text"
-                            size="small"
-                            icon={<DeleteOutlined />}
-                            danger
-                        />
-                    </Tooltip>
-                </Popconfirm>
-            </div>
+            {isDeleteAvailable && (
+                <div className="absolute top-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
+                    <Popconfirm
+                        title="Delete this note?"
+                        description="Are you sure you want to delete this note permanently?"
+                        onConfirm={() => onDelete(note.id)}
+                        okText="Delete"
+                        cancelText="Cancel"
+                        okButtonProps={{ danger: true }}
+                    >
+                        <Tooltip title="Delete note">
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<DeleteOutlined />}
+                                danger
+                            />
+                        </Tooltip>
+                    </Popconfirm>
+                </div>
+            )}
 
-            <h3 className="font-bold text-lg mb-3 truncate">{note.title}</h3>
+            <Tooltip title={note.title} placement="topLeft">
+                <h3 className="font-bold text-lg mb-3 line-clamp-1 cursor-pointer hover:text-blue-600 transition-colors">
+                    {note.title}
+                </h3>
+            </Tooltip>
+
             <p className="text-sm mb-4 line-clamp-2">
                 {getPlainTextFromEditorJs(note.content) || "No content"}
             </p>

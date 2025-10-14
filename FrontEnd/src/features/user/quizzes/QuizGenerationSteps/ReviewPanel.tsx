@@ -45,6 +45,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 isSelected={true}
                 onSelect={() => { }}
                 onDelete={() => { }}
+                isDeleteAvailable={false}
               />
             ) : (
               <Card style={{ textAlign: "center", padding: 24 }}>

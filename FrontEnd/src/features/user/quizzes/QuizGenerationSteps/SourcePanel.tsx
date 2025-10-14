@@ -136,6 +136,7 @@ export const SourcePanel: React.FC<SourcePanelProps> = ({
                           form.setFieldsValue({ noteId: note.id });
                         }}
                         onDelete={() => { }}
+                        isDeleteAvailable={false}
                       />
                     </Col>
                   );

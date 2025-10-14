@@ -1,20 +1,13 @@
 ﻿using AutoMapper;
+using StudyNest.Common.Attributes;
 using StudyNest.Common.DbEntities.BaseEntity;
 using StudyNest.Common.DbEntities.Entities;
-using StudyNest.Common.DbEntities.Identities;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace StudyNest.Common.Models.DTOs.EntityDTO.Note
 {
     [AutoMap(typeof(DbEntities.Entities.Note), ReverseMap = true, PreserveReferences = true)]
-    public class SelectNoteDTO: BaseEntity<string>
+    public class SelectNoteDTO : BaseEntity<string>
     {
         [Required]
         public string Title { get; set; }
@@ -26,8 +19,30 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Note
         public string OwnerId { get; set; }
         //Mapping to Folder
         public string FolderId { get; set; }
-        public DbEntities.Entities.Folder Folder { get; set; }
+        public NoteFolderSummaryDTO Folder { get; set; }
         //Mapping to Tags
-        public ICollection<NoteTag> NoteTags { get; set; } = new List<NoteTag>();
+        public ICollection<NoteTagRelationDTO> NoteTags { get; set; } = new List<NoteTagRelationDTO>();
+    }
+
+    // 3 types below support for select NOTE for better performance 
+    [AutoMap(typeof(DbEntities.Entities.Folder), ReverseMap = true, PreserveReferences = true)]
+    public class NoteFolderSummaryDTO : BaseEntity<string>
+    {
+        public string FolderName { get; set; }
+        public string OwnerId { get; set; }
+    }
+
+    [AutoMap(typeof(NoteTag), ReverseMap = true, PreserveReferences = true)]
+    public class NoteTagRelationDTO : BaseEntity<string>
+    {
+        public string TagId { get; set; }
+        public TagSummaryDTO Tag { get; set; }
+    }
+
+    [AutoMap(typeof(DbEntities.Entities.Tag), ReverseMap = true, PreserveReferences = true)]
+    public class TagSummaryDTO : BaseEntity<string>
+    {
+        [TrimmedRequired]
+        public string Name { get; set; }
     }
 }

@@ -62,7 +62,7 @@
   /* Đặt sát block */
 }
 
-/* Hoặc nếu muốn giữ chúng nhưng sát nội dung, giảm khoảng cách */
+/* Giữ cho các nút sát nội dung, giảm khoảng cách */
 .editor-output .ce-toolbar__plus,
 .editor-output .ce-toolbar__settings-btn {
   margin-left: 0 !important;
@@ -151,4 +151,30 @@
   display: block;
   margin-left: auto;
   margin-right: 0;
+}
+
+.rotate-center {
+	-webkit-animation: rotate-center 1.2s ease-in-out infinite both;
+	        animation: rotate-center 1.2s ease-in-out infinite both;
+}
+
+@-webkit-keyframes rotate-center {
+  0% {
+    -webkit-transform: rotate(0);
+            transform: rotate(0);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
+}
+@keyframes rotate-center {
+  0% {
+    -webkit-transform: rotate(0);
+            transform: rotate(0);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
 }

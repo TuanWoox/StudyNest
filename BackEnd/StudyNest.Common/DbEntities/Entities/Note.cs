@@ -7,6 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using Newtonsoft.Json;
 using System.Threading.Tasks;
 
 namespace StudyNest.Common.DbEntities.Entities
@@ -21,6 +22,7 @@ namespace StudyNest.Common.DbEntities.Entities
         public string Status { get; set; }
         // Mapping to owner
         public string OwnerId { get; set; }
+        [JsonIgnore]
         public ApplicationUser Owner { get; set; }
         //Mapping to Folder
         public string FolderId { get; set; }

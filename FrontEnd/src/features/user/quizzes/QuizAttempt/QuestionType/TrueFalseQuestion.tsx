@@ -36,10 +36,10 @@ const TrueFalseQuestion = ({ question, answer }: TrueFalseQuestionPropType) => {
     const falseChoice = question.choices.find(c => c.text.toLowerCase() === "false");
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        <div className="grid grid-cols-2 gap-6 w-full">
             {trueChoice && (
                 <Button
-                    size="large"
+                    size="middle"
                     type={selectedAnswer === trueChoice.id ? "primary" : "default"}
                     icon={<CheckOutlined style={{ fontSize: "24px" }} />}
                     onClick={() => onAnswerChange(trueChoice.id)}
@@ -58,13 +58,13 @@ const TrueFalseQuestion = ({ question, answer }: TrueFalseQuestionPropType) => {
                         borderWidth: "2px",
                     }}
                 >
-                    <span style={{ fontSize: "22px", fontWeight: "bold" }}>True</span>
+                    <span className="text-base font-bold sm:text-base md:text-lg lg:text-2xl">True</span>
                 </Button>
             )}
 
             {falseChoice && (
                 <Button
-                    size="large"
+                    size="middle"
                     type={selectedAnswer === falseChoice.id ? "primary" : "default"}
                     icon={<CloseOutlined style={{ fontSize: "24px" }} />}
                     onClick={() => onAnswerChange(falseChoice.id)}
@@ -83,7 +83,7 @@ const TrueFalseQuestion = ({ question, answer }: TrueFalseQuestionPropType) => {
                         borderWidth: "2px",
                     }}
                 >
-                    <span style={{ fontSize: "22px", fontWeight: "bold" }}>False</span>
+                    <span className="text-base font-bold sm:text-base md:text-lg lg:text-2xl">False</span>
                 </Button>
             )}
         </div>

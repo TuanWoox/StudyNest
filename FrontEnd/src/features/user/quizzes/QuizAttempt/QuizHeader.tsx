@@ -10,12 +10,12 @@ export function QuizHeader() {
     const { data } = useGetQuizDetail(id);
 
     return (
-        <div className="mb-8">
-            <div className="max-w-4xl mx-auto text-center">
+        <div className="mb-2">
+            <div className="mx-auto text-center">
                 <Space direction="vertical" size="small" className="w-full">
-                    <FileTextOutlined className="text-4xl text-blue-500 mb-2" />
+                    <FileTextOutlined className="text-4xl text-blue-500" />
 
-                    <Title level={2} className="!mb-2">
+                    <Title level={3} className="!mb-1">
                         {data?.title}
                     </Title>
 
@@ -24,7 +24,7 @@ export function QuizHeader() {
                     </Text>
                 </Space>
             </div>
-            <Divider className="mt-6" />
+            <Divider className="!mt-2 !mb-4" />
         </div>
     );
 }

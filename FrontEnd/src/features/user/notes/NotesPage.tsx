@@ -52,7 +52,7 @@ const NotesPage: React.FC = () => {
         return <Spinner></Spinner>;
     if (errorNotes || errorFolders || errorTags) return <div className="p-4 text-red-500">Failed to load folders.</div>;
 
-    const handleCreateNote = () => {
+    const handleCreateNote = (folder?: Folder) => {
         const newNote: Note = {
             id: `note-${Date.now()}`,
             title: "Untitled Note",
@@ -60,7 +60,7 @@ const NotesPage: React.FC = () => {
             status: EStatus.InProgress,
             ownerId: "1",
             noteTags: [],
-            folder: undefined,
+            folder: folder,
         };
         setSelectedNote(newNote);
         setIsEditorVisible(true);

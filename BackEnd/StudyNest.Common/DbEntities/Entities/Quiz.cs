@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using System.Threading.Tasks;
 
 namespace StudyNest.Common.DbEntities.Entities
@@ -16,6 +17,7 @@ namespace StudyNest.Common.DbEntities.Entities
         [Required]
         public string Title { get; set; } = string.Empty;
         public string OwnerId { get; set; }
+        [JsonIgnore]
         public ApplicationUser Owner { get; set; }
         public string NoteId { get; set; }
         public Note Note { get; set; }

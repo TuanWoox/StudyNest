@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using System.Threading.Tasks;
 
 namespace StudyNest.Common.DbEntities.Entities
@@ -17,6 +18,7 @@ namespace StudyNest.Common.DbEntities.Entities
         public Quiz Quiz { get; set; }
         [Required]
         public string UserId { get; set; }
+        [JsonIgnore]
         public ApplicationUser User { get; set; }
         [Required]
         public string QuizAttemptSnapshotId { get; set; }

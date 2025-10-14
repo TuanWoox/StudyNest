@@ -247,7 +247,7 @@ const QuizDetailPage: React.FC = () => {
       </div>
 
       {/* Main Content with Spacer */}
-      <div style={{ padding: isMobile ? 16 : 32, paddingTop: 0 }}>
+      <div style={{ padding: isMobile ? 16 : 0, paddingTop: 0 }}>
         <Card
           style={{
             width: "100%",

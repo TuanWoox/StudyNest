@@ -83,7 +83,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
                 title,
                 content,
                 status: note.status,
-                folderId: selectedFolder ? selectedFolder.id : "",
+                folderId,
                 tagsNames,
                 ownerId: note.ownerId,
             };

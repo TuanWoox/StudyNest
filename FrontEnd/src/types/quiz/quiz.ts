@@ -3,6 +3,7 @@ export interface QuizList {
   title: string;
   totalQuestion: number;
   dateCreated: string;
+  noteTitle: string;
 }
 
 export interface QuizDetail {

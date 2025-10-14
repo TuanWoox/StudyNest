@@ -1,9 +1,7 @@
-"use client"
-
 import { useReduxSelector } from "@/hooks/reduxHook/useReduxSelector"
 import { selectQuizNavigation } from "@/store/quizAttemptSlice"
 import { LeftOutlined, RightOutlined, SendOutlined } from "@ant-design/icons"
-import { Button } from "antd"
+import { Button, Grid } from "antd"
 
 interface QuizNavigationProps {
     onPrevious: () => void
@@ -12,6 +10,8 @@ interface QuizNavigationProps {
     isSubmitting: boolean
 }
 
+const { useBreakpoint } = Grid
+
 export function QuizNavigation({
     onPrevious,
     onNext,
@@ -19,16 +19,21 @@ export function QuizNavigation({
     isSubmitting,
 }: QuizNavigationProps) {
     const { isLastQuestion, isFirstQuestion, hasAnswer } = useReduxSelector(selectQuizNavigation);
+    const screens = useBreakpoint();
+
+    // responsive size: small nếu mobile, còn lại middle
+    const buttonSize = screens.xs ? "small" : "middle"
+
     return (
         <div className="flex items-center justify-between gap-4">
             <Button
                 onClick={onPrevious}
                 disabled={isFirstQuestion || isSubmitting}
                 type="default"
-                size="large"
+                size={buttonSize}
                 icon={<LeftOutlined />}
             >
-                Previous
+                Prev
             </Button>
 
             <div className="flex-1 flex justify-center">
@@ -44,7 +49,7 @@ export function QuizNavigation({
                     onClick={onSubmit}
                     disabled={!hasAnswer || isSubmitting}
                     type="primary"
-                    size="large"
+                    size={buttonSize}
                     icon={<SendOutlined />}
                     loading={isSubmitting}
                 >
@@ -55,7 +60,7 @@ export function QuizNavigation({
                     onClick={onNext}
                     disabled={!hasAnswer || isSubmitting}
                     type="primary"
-                    size="large"
+                    size={buttonSize}
                     icon={<RightOutlined />}
                 >
                     Next

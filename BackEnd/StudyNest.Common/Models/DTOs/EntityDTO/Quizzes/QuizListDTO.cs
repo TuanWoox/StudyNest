@@ -16,10 +16,12 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Quizzes
         [Required]
         public string Title { get; set; }
         public int TotalQuestion { get; set; }
+        public string? NoteTitle { get; set; }
         public void Mapping(Profile profile)
         {
             var map = profile.CreateMap<Quiz, QuizListDTO>();
             map.ForMember(x => x.TotalQuestion, y => y.MapFrom(dto => dto.Questions.Count));
+            map.ForMember(x => x.NoteTitle, y => y.MapFrom(dto => dto.Note.Title));
         }
     }
 }

@@ -14,13 +14,13 @@ const QuestionCard = () => {
 
     if (!question) return <Spinner></Spinner>
     return (
-        <div className="bg-surface-elevated rounded-2xl p-8 border border-slate-300 shadow-lg mb-6">
-            <div className="flex items-start justify-between mb-6">
+        <div className="bg-surface-elevated rounded-2xl p-6 border border-slate-300 shadow-lg mb-4">
+            <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 mb-2">
                         <QuestionTypeBadge type={question.type.toLowerCase()} />
                     </div>
-                    <h2 className="text-3xl font-bold text-foreground mb-2 text-balance">{question.name}</h2>
+                    <h2 className="sm:text-base md:text-lg lg:text-2xl text-base font-bold text-foreground mb-2 text-balance">{question.name}</h2>
                 </div>
             </div>
             {question.type.toLowerCase() === "mcq" && (

@@ -162,12 +162,12 @@ namespace StudyNest.Business.Repository
                         generalQuery = generalQuery.Where(x => page.Selected.Contains(x.Id)).AsQueryable();
                     }
                 }
-                var tempQuery = generalQuery.ProjectTo<TResponse>(_mapper.ConfigurationProvider);
-                var tempResult = await tempQuery.ToListAsync();
 
-                if (tempResult != null && tempResult.Count > 0)
-                {
-                    result.Data = tempResult;
+                var fetchedResult = await generalQuery.ToListAsync();
+
+                if (fetchedResult != null && fetchedResult.Count > 0)
+                { 
+                    result.Data = _mapper.Map<List<TResponse>>(fetchedResult);
                     result.Page.TotalElements = await query.CountAsync();
                 }
                 else
@@ -182,7 +182,6 @@ namespace StudyNest.Business.Repository
             }
             return result;
         }
-
         public async Task<ReturnResult<TEntity>> UpdateAsync<TUpdateDto>(TUpdateDto entity)
         where TUpdateDto : class, IBaseKey<TKey>
         {

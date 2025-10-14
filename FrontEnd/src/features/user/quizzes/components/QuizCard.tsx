@@ -1,6 +1,15 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Button, Card, Typography, Space, Dropdown, Popconfirm } from "antd";
+import {
+  Button,
+  Card,
+  Typography,
+  Space,
+  Dropdown,
+  Popconfirm,
+  Tag,
+  theme,
+} from "antd";
 import type { MenuProps } from "antd";
 import {
   DeleteOutlined,
@@ -9,11 +18,13 @@ import {
   FileTextOutlined,
   MoreOutlined,
   PlayCircleOutlined,
+  BookOutlined,
 } from "@ant-design/icons";
 import { QuizList } from "@/types/quiz/quiz";
 import { formatDMY } from "@/utils/date";
 
 const { Title, Text } = Typography;
+const { useToken } = theme;
 
 interface QuizCardProps {
   quiz: QuizList;
@@ -34,6 +45,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
   deletingId,
   isDeleting,
 }) => {
+  const { token } = useToken();
   const isMobile = window.innerWidth < 576;
   const isTablet = window.innerWidth < 768;
 
@@ -65,12 +77,12 @@ const QuizCard: React.FC<QuizCardProps> = ({
     <Card
       hoverable
       style={{
-        borderRadius: isMobile ? 10 : 12,
+        borderRadius: isMobile ? token.borderRadius : token.borderRadiusLG,
         overflow: "hidden",
         height: "100%",
         position: "relative",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        boxShadow: token.boxShadow,
       }}
       styles={{
         body: {
@@ -82,6 +94,18 @@ const QuizCard: React.FC<QuizCardProps> = ({
       }}
       className="quiz-card"
     >
+      {/* Solid Top Border */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 4,
+          backgroundColor: token.colorPrimary,
+        }}
+      />
+
       {/* Card Header */}
       <div
         style={{
@@ -89,13 +113,14 @@ const QuizCard: React.FC<QuizCardProps> = ({
           justifyContent: "space-between",
           alignItems: "flex-start",
           marginBottom: isMobile ? 12 : 16,
+          marginTop: 8,
         }}
       >
         <div
           style={{
-            backgroundColor: "#1890ff",
-            borderRadius: isMobile ? 6 : 8,
-            padding: isMobile ? "4px 10px" : "6px 12px",
+            backgroundColor: token.colorPrimary,
+            borderRadius: isMobile ? token.borderRadiusSM : token.borderRadius,
+            padding: isMobile ? "6px 12px" : "8px 14px",
             display: "inline-flex",
             alignItems: "center",
             gap: 6,
@@ -104,9 +129,9 @@ const QuizCard: React.FC<QuizCardProps> = ({
           <Text
             strong
             style={{
-              color: "#fff",
-              fontSize: isMobile ? 12 : 14,
-              fontWeight: 600,
+              color: token.colorTextLightSolid,
+              fontSize: isMobile ? 13 : 15,
+              fontWeight: 700,
             }}
           >
             #{(page - 1) * pageSize + index + 1}
@@ -119,6 +144,9 @@ const QuizCard: React.FC<QuizCardProps> = ({
             size={isMobile ? "small" : "middle"}
             style={{
               marginTop: -4,
+              borderRadius: "50%",
+              width: 32,
+              height: 32,
             }}
             className="quiz-more-btn"
           />
@@ -130,18 +158,17 @@ const QuizCard: React.FC<QuizCardProps> = ({
         <Title
           level={isMobile ? 5 : 4}
           style={{
-            margin: `0 0 ${isMobile ? 12 : 20}px 0`,
-            fontSize: isMobile ? 15 : 18,
-            fontWeight: 600,
+            margin: `0 0 ${isMobile ? 16 : 20}px 0`,
+            fontSize: isMobile ? 16 : 18,
+            fontWeight: 700,
             lineHeight: 1.4,
             overflow: "hidden",
             textOverflow: "ellipsis",
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
-            minHeight: isMobile ? 42 : 50,
-            color: "#262626",
-            transition: "color 0.2s ease",
+            minHeight: isMobile ? 44 : 50,
+            transition: "color 0.3s ease",
           }}
           className="quiz-title"
         >
@@ -156,24 +183,25 @@ const QuizCard: React.FC<QuizCardProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          margin: isMobile ? "12px 0" : "16px 0",
+          margin: isMobile ? "12px 0" : "16px 0 20px 0",
         }}
       >
         <div
           style={{
-            width: isMobile ? 60 : 80,
-            height: isMobile ? 60 : 80,
+            width: isMobile ? 70 : 90,
+            height: isMobile ? 70 : 90,
             borderRadius: "50%",
-            backgroundColor: "#f0f5ff",
+            backgroundColor: token.colorPrimaryBg,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            border: `2px solid ${token.colorPrimary}`,
           }}
         >
           <FileTextOutlined
             style={{
-              fontSize: isMobile ? 28 : 36,
-              color: "#1890ff",
+              fontSize: isMobile ? 32 : 40,
+              color: token.colorPrimary,
             }}
           />
         </div>
@@ -182,30 +210,34 @@ const QuizCard: React.FC<QuizCardProps> = ({
       {/* Quiz Info */}
       <div
         style={{
-          backgroundColor: "#fafafa",
-          borderRadius: isMobile ? 6 : 8,
-          padding: isMobile ? "10px 12px" : "12px 16px",
-          marginBottom: isMobile ? 12 : 16,
+          backgroundColor: token.colorFillTertiary,
+          borderRadius: isMobile ? token.borderRadiusSM : token.borderRadiusLG,
+          padding: isMobile ? "12px 14px" : "16px 18px",
+          marginBottom: isMobile ? 16 : 20,
+          border: `1px solid ${token.colorBorder}`,
         }}
       >
         <Space
           direction="vertical"
-          size={isMobile ? 8 : 10}
+          size={isMobile ? 10 : 12}
           style={{ width: "100%" }}
         >
           <div
+            className="quiz-info-item"
             style={{
               display: "flex",
               alignItems: "center",
-              gap: isMobile ? 8 : 10,
+              gap: isMobile ? 10 : 12,
             }}
           >
             <div
               style={{
-                width: isMobile ? 28 : 32,
-                height: isMobile ? 28 : 32,
-                borderRadius: isMobile ? 6 : 8,
-                backgroundColor: "#e6f7ff",
+                width: isMobile ? 36 : 40,
+                height: isMobile ? 36 : 40,
+                borderRadius: isMobile
+                  ? token.borderRadiusSM
+                  : token.borderRadius,
+                backgroundColor: token.colorPrimaryBg,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -213,18 +245,19 @@ const QuizCard: React.FC<QuizCardProps> = ({
             >
               <FileTextOutlined
                 style={{
-                  color: "#1890ff",
-                  fontSize: isMobile ? 14 : 16,
+                  color: token.colorPrimary,
+                  fontSize: isMobile ? 16 : 18,
                 }}
               />
             </div>
             <div style={{ flex: 1 }}>
               <Text
+                type="secondary"
                 style={{
-                  fontSize: isMobile ? 12 : 13,
-                  color: "#8c8c8c",
+                  fontSize: isMobile ? 11 : 12,
                   display: "block",
-                  lineHeight: 1.2,
+                  lineHeight: 1.3,
+                  fontWeight: 500,
                 }}
               >
                 Questions
@@ -232,27 +265,88 @@ const QuizCard: React.FC<QuizCardProps> = ({
               <Text
                 strong
                 style={{
-                  fontSize: isMobile ? 14 : 16,
-                  color: "#262626",
+                  fontSize: isMobile ? 16 : 18,
+                  fontWeight: 700,
                 }}
               >
                 {quiz.totalQuestion}
               </Text>
             </div>
           </div>
+          {quiz.noteTitle && (
+            <div
+              className="quiz-info-item"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: isMobile ? 10 : 12,
+              }}
+            >
+              <div
+                style={{
+                  width: isMobile ? 36 : 40,
+                  height: isMobile ? 36 : 40,
+                  borderRadius: isMobile
+                    ? token.borderRadiusSM
+                    : token.borderRadius,
+                  backgroundColor: token.colorPrimaryBg,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <BookOutlined
+                  style={{
+                    color: token.colorPrimary,
+                    fontSize: isMobile ? 16 : 18,
+                  }}
+                />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Text
+                  type="secondary"
+                  style={{
+                    fontSize: isMobile ? 11 : 12,
+                    display: "block",
+                    lineHeight: 1.3,
+                    fontWeight: 500,
+                  }}
+                >
+                  Source Note
+                </Text>
+                <Text
+                  strong
+                  style={{
+                    fontSize: isMobile ? 13 : 14,
+                    fontWeight: 600,
+                    display: "block",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={quiz.noteTitle}
+                >
+                  {quiz.noteTitle}
+                </Text>
+              </div>
+            </div>
+          )}
           <div
+            className="quiz-info-item"
             style={{
               display: "flex",
               alignItems: "center",
-              gap: isMobile ? 8 : 10,
+              gap: isMobile ? 10 : 12,
             }}
           >
             <div
               style={{
-                width: isMobile ? 28 : 32,
-                height: isMobile ? 28 : 32,
-                borderRadius: isMobile ? 6 : 8,
-                backgroundColor: "#f6ffed",
+                width: isMobile ? 36 : 40,
+                height: isMobile ? 36 : 40,
+                borderRadius: isMobile
+                  ? token.borderRadiusSM
+                  : token.borderRadius,
+                backgroundColor: token.colorPrimaryBg,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -260,18 +354,19 @@ const QuizCard: React.FC<QuizCardProps> = ({
             >
               <CalendarOutlined
                 style={{
-                  color: "#52c41a",
-                  fontSize: isMobile ? 14 : 16,
+                  color: token.colorPrimary,
+                  fontSize: isMobile ? 16 : 18,
                 }}
               />
             </div>
             <div style={{ flex: 1 }}>
               <Text
+                type="secondary"
                 style={{
-                  fontSize: isMobile ? 12 : 13,
-                  color: "#8c8c8c",
+                  fontSize: isMobile ? 11 : 12,
                   display: "block",
-                  lineHeight: 1.2,
+                  lineHeight: 1.3,
+                  fontWeight: 500,
                 }}
               >
                 Created
@@ -279,8 +374,8 @@ const QuizCard: React.FC<QuizCardProps> = ({
               <Text
                 strong
                 style={{
-                  fontSize: isMobile ? 12 : 14,
-                  color: "#595959",
+                  fontSize: isMobile ? 13 : 14,
+                  fontWeight: 600,
                 }}
               >
                 {formatDMY(quiz.dateCreated)}
@@ -291,18 +386,20 @@ const QuizCard: React.FC<QuizCardProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <Space size={isMobile ? 6 : 8} style={{ width: "100%" }}>
+      <Space size={isMobile ? 8 : 10} style={{ width: "100%" }}>
         <Link to={`/user/quiz/${quiz.id}`} style={{ flex: 1 }}>
           <Button
             type="primary"
             icon={<EyeOutlined />}
-            size={isMobile ? "middle" : "large"}
+            size="large"
             style={{
               width: "100%",
-              borderRadius: isMobile ? 6 : 8,
-              height: isMobile ? 36 : 40,
-              fontWeight: 500,
-              fontSize: isMobile ? 13 : 14,
+              borderRadius: isMobile
+                ? token.borderRadiusSM
+                : token.borderRadius,
+              height: isMobile ? 44 : 44,
+              fontWeight: 600,
+              fontSize: isMobile ? 14 : 15,
             }}
             className="quiz-view-btn"
           >
@@ -311,14 +408,17 @@ const QuizCard: React.FC<QuizCardProps> = ({
         </Link>
         <Link to={`/user/quizAttempt/${quiz.id}`} style={{ flex: 1 }}>
           <Button
-            type="default"
             icon={<PlayCircleOutlined />}
-            size={isMobile ? "middle" : "large"}
+            size="large"
             style={{
-              borderRadius: isMobile ? 6 : 8,
-              height: isMobile ? 36 : 40,
-              fontWeight: 500,
-              fontSize: isMobile ? 13 : 14,
+              width: "100%",
+              borderRadius: isMobile
+                ? token.borderRadiusSM
+                : token.borderRadius,
+              height: isMobile ? 44 : 44,
+              fontWeight: 600,
+              fontSize: isMobile ? 14 : 15,
+              borderWidth: 2,
             }}
             className="quiz-start-btn"
           >

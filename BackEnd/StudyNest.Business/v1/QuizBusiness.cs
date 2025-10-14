@@ -109,8 +109,10 @@ namespace StudyNest.Business.v1
             {
                 var query = _context.Quizzes
                     .Where(n => n.OwnerId == _userContext.UserId)
+                    .Include(x => x.Questions)
+                    .Include(n => n.Note)
                     .AsNoTracking()
-                    .OrderByDescending(q => q.DateCreated ?? DateTimeOffset.MinValue)
+                    .OrderByDescending(q => q.DateModified ?? DateTimeOffset.MinValue)
                     .AsQueryable();
                 rs.Result = await _repository.GetPagingAsync<Page<string>, QuizListDTO>(query, page, isExported);
             }
@@ -142,6 +144,9 @@ namespace StudyNest.Business.v1
                     rs.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz", id);
                     return rs;
                 }
+                quiz.Questions = quiz.Questions
+                    .OrderByDescending(q => q.DateModified)
+                    .ToList();
                 rs.Result = quiz;
             }
             catch (Exception ex)

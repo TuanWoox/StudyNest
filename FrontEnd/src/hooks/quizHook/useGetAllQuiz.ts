@@ -6,12 +6,14 @@ import { Page } from "@/types/common/page";
 import { SortOrderType } from "@/constants/sortOrderType";
 import { PagedData } from "@/types/common/paged-data";
 import type { AxiosError } from "axios";
+import { StudyNestFilterType } from "@/constants/filterType";
 
 interface UseGetAllQuizOptions {
   enabled?: boolean;
   sortByNewest?: boolean;
   pageSize?: number;
   pageNumber?: number;
+  searchTerm?: string;
 }
 
 /**
@@ -22,9 +24,10 @@ const useGetAllQuiz = (options?: UseGetAllQuizOptions) => {
   const sortByNewest = options?.sortByNewest ?? true;
   const pageSize = options?.pageSize ?? 8;
   const pageNumber = options?.pageNumber ?? 0;
+  const searchTerm = options?.searchTerm ?? "";
 
   return useQuery<PagedData<QuizList, string>, AxiosError>({
-    queryKey: ["quizzes", { pageNumber, pageSize, sortByNewest }],
+    queryKey: ["quizzes", { pageNumber, pageSize, sortByNewest, searchTerm }],
     enabled,
     queryFn: async () => {
       // Create the payload based on options
@@ -34,16 +37,27 @@ const useGetAllQuiz = (options?: UseGetAllQuizOptions) => {
         totalElements: 0, // Server will set the actual value
         orders: sortByNewest
           ? [
-            {
-              sort: "dateCreated",
-              sortDir: SortOrderType.DESC,
-              dynamicProperty: "",
-              delimiter: "",
-              dataType: "",
-            },
-          ]
+              {
+                sort: "dateModified",
+                sortDir: SortOrderType.DESC,
+                dynamicProperty: "",
+                delimiter: "",
+                dataType: "",
+              },
+            ]
           : [],
-        filter: [],
+        filter: searchTerm
+          ? [
+              {
+                prop: "title",
+                value: searchTerm,
+                filterOperator: "Contains",
+                filterType: StudyNestFilterType.Text,
+                dynamicProperty: "",
+                delimiter: "",
+              },
+            ]
+          : [],
         selected: [],
       };
 

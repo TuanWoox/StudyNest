@@ -46,7 +46,7 @@ const MultipleChoiceQuestion = ({ question, answer }: MultipleChoiceQuestionProp
                             backgroundColor: selectedAnswer === option.id ? "#e6f7ff" : undefined,
                         }}
                     >
-                        <div className="flex-1 text-3xl font-semibold md:text-lg p-2">{option.text}</div>
+                        <div className="flex-1 text-base font-semibold sm:text-base md:text-lg lg:text-2xl p-2">{option.text}</div>
                     </Radio>
                 ))}
             </Space>

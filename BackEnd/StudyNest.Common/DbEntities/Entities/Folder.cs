@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace StudyNest.Common.DbEntities.Entities
 {
@@ -14,6 +14,7 @@ namespace StudyNest.Common.DbEntities.Entities
         [Required]
         public string FolderName { get; set; }
         public string OwnerId { get; set; }
+        [JsonIgnore]
         public ApplicationUser Owner { get; set; }
         public ICollection<Note> Notes { get; set; } = new List<Note>();
     }

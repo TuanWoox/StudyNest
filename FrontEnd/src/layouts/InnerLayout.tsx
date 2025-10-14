@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ProLayout } from "@ant-design/pro-components";
 import { useNavigate, Outlet, Navigate } from "react-router-dom";
@@ -6,8 +5,17 @@ import {
   UserOutlined,
   SettingOutlined,
   LogoutOutlined,
+  HourglassOutlined,
 } from "@ant-design/icons";
-import { Avatar, Dropdown, Menu, ConfigProvider, theme, Space } from "antd";
+import {
+  Avatar,
+  Dropdown,
+  Menu,
+  ConfigProvider,
+  Space,
+  Button,
+  theme
+} from "antd";
 import { SunIcon, MoonIcon } from "@heroicons/react/24/outline";
 import logo from "@/assets/react.svg";
 import { ERole } from "@/utils/enums/ERole";
@@ -17,14 +25,13 @@ import { useReduxSelector } from "@/hooks/reduxHook/useReduxSelector";
 import { useReduxDispatch } from "@/hooks/reduxHook/useReduxDispatch";
 import { useQueryClient } from "@tanstack/react-query";
 
-
 const InnerLayout = () => {
   const navigate = useNavigate();
   const dispatch = useReduxDispatch();
   const [darkMode, setDarkMode] = useState(false);
   const role = useReduxSelector(selectRole);
   const queryClient = useQueryClient();
-  if (!role) return <Navigate to="/login" replace />
+  if (!role) return <Navigate to="/login" replace />;
   const layoutTitle = role === ERole.Admin ? "Admin Panel" : "Study Nest";
   const menus = role === ERole.Admin ? adminMenus : userMenus;
 
@@ -103,6 +110,10 @@ const InnerLayout = () => {
           }}
           rightContentRender={() => (
             <Space>
+              {/* <Button
+                className="rotate-center"
+                icon={<HourglassOutlined />}>
+              </Button> */}
               {/* Toggle Dark Mode */}
               <button
                 onClick={() => setDarkMode(!darkMode)}
