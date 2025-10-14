@@ -93,8 +93,7 @@ export function useCreateEditor({
                                 uploadByFile(file) {
                                     const formData = new FormData();
                                     formData.append('file', file);
-                                    const uploadLink = baseURL === "/api/v1" ? "/Image" : `${baseURL}/Image`;
-                                    return instance.post(uploadLink, formData, {
+                                    return instance.post("/Image", formData, {
                                         headers: { 'Content-Type': 'multipart/form-data' },
                                     }).then(({ data }) => ({
                                         success: data?.result?.success,
