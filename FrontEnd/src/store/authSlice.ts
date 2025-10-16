@@ -15,7 +15,7 @@ const initialState: AuthState = {
 };
 
 interface DecodedToken {
-    userId: string;
+    nameid: string;
     role: string;
     exp?: number;
     iat?: number;
@@ -29,7 +29,7 @@ const authSlice = createSlice({
         initAuthState(state, action: PayloadAction<string>) {
             try {
                 const decoded: DecodedToken = jwtDecode(action.payload);
-                state.userId = decoded.userId;
+                state.userId = decoded.nameid;
                 state.role = decoded.role;
                 state.authenticated = true;
             } catch (err) {
