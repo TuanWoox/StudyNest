@@ -12,7 +12,7 @@ export const QuizHeader: React.FC = () => {
     const darkMode = useOutletContext<boolean>();
 
     const onClickBackToQuizList = () => {
-        navigate("/user/quiz"); // Adjust route to your quiz list page
+        navigate(`/user/quiz/${id}`); // Adjust route to your quiz list page
     };
 
     return (
@@ -29,7 +29,7 @@ export const QuizHeader: React.FC = () => {
                         color: darkMode ? "#ffffff" : undefined,
                     }}
                 >
-                    Back to Quiz List
+                    Back to Quiz
                 </Button>
             </div>
 
