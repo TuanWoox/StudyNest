@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react";
 import { QuestionDTO } from "@/types/question/questionDTO";
 import { QuizAttemptAnswerDTO } from "@/types/quizAttemptAnswer/quizAttemptAnswerDTO";
-import { Row, Col, Pagination } from "antd";
-import { useOutletContext } from "react-router-dom";
+import { Row, Col, Pagination, Button } from "antd";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import QuestionResultCard from "./QuestionResultCard";
 
 interface QuestionResultsListProps {
     questions: QuestionDTO[] | undefined;
     answers: QuizAttemptAnswerDTO[] | undefined;
+    quizId: string | undefined;
 }
 
-const QuestionResultsList = ({ questions, answers }: QuestionResultsListProps) => {
+const QuestionResultsList = ({ questions, answers, quizId }: QuestionResultsListProps) => {
     const darkMode = useOutletContext<boolean>();
     const [currentPage, setCurrentPage] = useState(1);
+    const navigate = useNavigate();
     const pageSize = 4;
 
     useEffect(() => {
@@ -35,6 +37,11 @@ const QuestionResultsList = ({ questions, answers }: QuestionResultsListProps) =
     const endIndex = startIndex + pageSize;
     const paginatedQuestions = questions.slice(startIndex, endIndex);
 
+    const onClickBackToQuiz = () => {
+        navigate(`/user/quiz/${quizId}`)
+    };
+
+
     return (
         <div className="mt-3">
             <Row gutter={[16, 16]}>
@@ -54,18 +61,34 @@ const QuestionResultsList = ({ questions, answers }: QuestionResultsListProps) =
                     );
                 })}
             </Row>
+            <div className="w-full flex justify-between items-center mt-4">
+                <Button
+                    type="primary"
+                    onClick={onClickBackToQuiz}
+                    style={{
+                        backgroundColor: darkMode ? '#1f2937' : undefined, // dark gray for dark mode
+                        borderColor: darkMode ? '#1f2937' : undefined,
+                        color: darkMode ? '#ffffff' : undefined,
+                    }}
+                >
+                    Back to Quiz
+                </Button>
 
-            {totalQuestions > pageSize && (
-                <Pagination
-                    current={currentPage}
-                    pageSize={pageSize}
-                    total={totalQuestions}
-                    onChange={(page) => setCurrentPage(page)}
-                    showSizeChanger={false}
-                    style={{ marginTop: 12, textAlign: 'left' }}
-                    align="end"
-                />
-            )}
+                {totalQuestions > pageSize && (
+                    <Pagination
+                        current={currentPage}
+                        pageSize={pageSize}
+                        total={totalQuestions}
+                        onChange={(page) => setCurrentPage(page)}
+                        showSizeChanger={false}
+                        style={{ marginTop: 0 }}
+                        align="end"
+                    />
+                )}
+            </div>
+
+
+
         </div>
     );
 };

@@ -1,16 +1,39 @@
 import useGetQuizDetail from "@/hooks/quizHook/useGetQuizDetail";
-import { Typography, Space, Divider } from "antd";
-import { useParams } from "react-router-dom";
-import { FileTextOutlined } from "@ant-design/icons";
+import { Typography, Space, Divider, Button } from "antd";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+import { FileTextOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
-export function QuizHeader() {
+export const QuizHeader: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
     const { data } = useGetQuizDetail(id);
+    const darkMode = useOutletContext<boolean>();
+
+    const onClickBackToQuizList = () => {
+        navigate("/user/quiz"); // Adjust route to your quiz list page
+    };
 
     return (
-        <div className="mb-2">
+        <div className="mb-4">
+            {/* Back Button */}
+            <div className="flex items-center justify-start mb-2">
+                <Button
+                    type="default"
+                    icon={<ArrowLeftOutlined />}
+                    onClick={onClickBackToQuizList}
+                    style={{
+                        backgroundColor: darkMode ? "#1f2937" : undefined,
+                        borderColor: darkMode ? "#1f2937" : undefined,
+                        color: darkMode ? "#ffffff" : undefined,
+                    }}
+                >
+                    Back to Quiz List
+                </Button>
+            </div>
+
+            {/* Quiz Title & Description */}
             <div className="mx-auto text-center">
                 <Space direction="vertical" size="small" className="w-full">
                     <FileTextOutlined className="text-4xl text-blue-500" />
@@ -24,7 +47,8 @@ export function QuizHeader() {
                     </Text>
                 </Space>
             </div>
+
             <Divider className="!mt-2 !mb-4" />
         </div>
     );
-}
+};

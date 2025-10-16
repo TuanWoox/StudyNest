@@ -33,6 +33,7 @@ const QuizResultView = () => {
             <QuestionResultsList
                 answers={data?.quizAttemptAnswers}
                 questions={data?.quizAttemptSnapshot.quizQuestionsParsed}
+                quizId={data?.quizId}
             />
         </div>
     );

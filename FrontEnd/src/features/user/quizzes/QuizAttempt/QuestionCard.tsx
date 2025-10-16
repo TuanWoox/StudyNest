@@ -7,9 +7,7 @@ import { useReduxSelector } from "@/hooks/reduxHook/useReduxSelector";
 import { selectQuizCard } from "@/store/quizAttemptSlice";
 
 
-
 const QuestionCard = () => {
-
     const { currentQuestion: question, currentAnswer: answer } = useReduxSelector(selectQuizCard);
 
     if (!question) return <Spinner></Spinner>
