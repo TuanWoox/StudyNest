@@ -10,6 +10,7 @@ import {
   Skeleton,
   Empty,
   Modal,
+  theme,
 } from "antd";
 import { WarningOutlined } from "@ant-design/icons";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,8 +21,10 @@ import QuizHeader from "./components/QuizHeader";
 import QuestionList from "./components/QuestionList";
 
 const { Text } = Typography;
+const { useToken } = theme;
 
 const QuizDetailPage: React.FC = () => {
+  const { token } = useToken();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -99,8 +102,8 @@ const QuizDetailPage: React.FC = () => {
           width: "100%",
           overflow: "auto",
           margin: "0 auto",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
-          borderRadius: isMobile ? 12 : 16,
+          boxShadow: token.boxShadowSecondary,
+          borderRadius: isMobile ? token.borderRadiusLG : token.borderRadiusLG,
         }}
         bodyStyle={{
           padding: isMobile ? 16 : 32,
@@ -121,8 +124,8 @@ const QuizDetailPage: React.FC = () => {
           width: "100%",
           overflow: "auto",
           margin: "0 auto",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
-          borderRadius: isMobile ? 12 : 16,
+          boxShadow: token.boxShadowSecondary,
+          borderRadius: isMobile ? token.borderRadiusLG : token.borderRadiusLG,
         }}
         bodyStyle={{
           padding: isMobile ? 16 : 32,
@@ -138,7 +141,7 @@ const QuizDetailPage: React.FC = () => {
             <WarningOutlined
               style={{
                 fontSize: isMobile ? 40 : 48,
-                color: "#ff4d4f",
+                color: token.colorError,
               }}
             />
           }
@@ -173,7 +176,7 @@ const QuizDetailPage: React.FC = () => {
         height: "100%",
         overflow: "auto",
         position: "relative",
-        backgroundColor: "#fafafa",
+        backgroundColor: token.colorBgLayout,
       }}
     >
       {/* Sticky Header Overlay */}
@@ -185,9 +188,9 @@ const QuizDetailPage: React.FC = () => {
           zIndex: 10,
           transform: isHeaderCollapsed ? `translateY(-100%)` : "translateY(0)",
           transition: "transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-          backgroundColor: "#ffffff",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-          borderRadius: isMobile ? "0 0 12px 12px" : "0 0 16px 16px",
+          backgroundColor: token.colorBgContainer,
+          boxShadow: token.boxShadow,
+          borderRadius: `0 0 ${token.borderRadiusLG}px ${token.borderRadiusLG}px`,
           willChange: "transform",
         }}
       >
@@ -205,59 +208,52 @@ const QuizDetailPage: React.FC = () => {
           />
           <Card
             style={{
-              marginTop: isMobile ? 12 : 16,
-              borderRadius: isMobile ? 10 : 12,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              marginTop: isMobile ? token.marginSM : token.margin,
+              borderRadius: token.borderRadius,
             }}
             bodyStyle={{
-              padding: isMobile ? 12 : 16,
+              padding: isMobile ? token.paddingSM : token.padding,
             }}
           >
             <Flex align="center" justify="space-between" wrap="wrap" gap={12}>
-              <Space>
+              <Space size="small">
                 <Tag
-                  color="cyan"
+                  color="blue"
                   style={{
                     fontSize: isMobile ? 13 : 14,
-                    padding: isMobile ? "4px 8px" : "5px 10px",
-                    borderRadius: 8,
+                    padding: isMobile ? "4px 10px" : "5px 12px",
+                    borderRadius: token.borderRadiusSM,
                     fontWeight: 500,
-                    border: "none",
-                    boxShadow: "0 2px 8px rgba(19, 194, 194, 0.2)",
                   }}
                 >
-                  📋 {(quiz?.questions ?? []).length} Question
+                  {(quiz?.questions ?? []).length} Question
                   {(quiz?.questions ?? []).length !== 1 ? "s" : ""}
                 </Tag>
               </Space>
-              <Space>
-                <Text
-                  type="secondary"
-                  style={{
-                    fontSize: isMobile ? 12 : 14,
-                  }}
-                >
-                  🗓️ Created on{" "}
-                  {quiz.dateCreated && formatDMY(quiz.dateCreated)}
-                </Text>
-              </Space>
+              <Text
+                type="secondary"
+                style={{
+                  fontSize: isMobile ? 12 : 14,
+                }}
+              >
+                Created {quiz.dateCreated && formatDMY(quiz.dateCreated)}
+              </Text>
             </Flex>
           </Card>
         </div>
       </div>
 
       {/* Main Content with Spacer */}
-      <div style={{ padding: isMobile ? 16 : 0, paddingTop: 0 }}>
+      <div>
         <Card
           style={{
             width: "100%",
             margin: "0 auto",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
-            borderRadius: isMobile ? 12 : 16,
-            background: "#ffffff",
+            boxShadow: token.boxShadowSecondary,
+            borderRadius: 0,
           }}
           bodyStyle={{
-            padding: isMobile ? 16 : 32,
+            padding: isMobile ? token.paddingSM : token.paddingLG,
             minHeight: "100vh",
           }}
         >
@@ -273,7 +269,9 @@ const QuizDetailPage: React.FC = () => {
       <Modal
         title={
           <Space>
-            <WarningOutlined style={{ color: "#faad14", fontSize: 20 }} />
+            <WarningOutlined
+              style={{ color: token.colorWarning, fontSize: 20 }}
+            />
             <span style={{ fontWeight: 600, fontSize: 16 }}>
               Unsaved Changes
             </span>
@@ -294,25 +292,19 @@ const QuizDetailPage: React.FC = () => {
         }}
         centered
         width={isMobile ? 340 : 450}
-        styles={{
-          body: {
-            padding: isMobile ? "20px 16px" : "24px",
-          },
-        }}
       >
-        <div style={{ paddingTop: 12 }}>
-          <p style={{ fontSize: isMobile ? 14 : 15, marginBottom: 12 }}>
-            You have unsaved changes that will be lost.
-          </p>
+        <div style={{ paddingTop: token.paddingSM }}>
           <p
             style={{
               fontSize: isMobile ? 14 : 15,
-              marginBottom: 0,
-              color: "#595959",
+              marginBottom: token.marginSM,
             }}
           >
-            Do you want to discard your changes or continue editing?
+            You have unsaved changes that will be lost.
           </p>
+          <Text type="secondary" style={{ fontSize: isMobile ? 14 : 15 }}>
+            Do you want to discard your changes or continue editing?
+          </Text>
         </div>
       </Modal>
     </div>

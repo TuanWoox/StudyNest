@@ -45,9 +45,12 @@ const authSlice = createSlice({
 
 
 export const selectRole = (state: RootState) => {
-    return state.authReducer.role
+    return state.authReducer.role;
 }
 
+export const selectUserId = (state: RootState) => {
+    return state.authReducer.userId;
+}
 
 export const { initAuthState, resetAuthState } = authSlice.actions;
 export default authSlice.reducer;

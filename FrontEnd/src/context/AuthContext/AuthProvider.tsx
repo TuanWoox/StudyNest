@@ -1,9 +1,9 @@
+import SpinnerFull from "@/components/SpinnerFull/SpinnerFull";
 import instance from "@/config/axiosConfig";
 import { useReduxDispatch } from "@/hooks/reduxHook/useReduxDispatch";
 import { initAuthState, resetAuthState } from "@/store/authSlice";
 import { ReturnResult } from "@/types/common/return-result";
 import { ReactNode, useEffect, useState } from "react";
-import Spinner from "@/components/Spinner/Spinner";
 
 
 interface ProviderProps {
@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }: ProviderProps) => {
         checkAuth();
     }, [dispatch]);
 
-    if (isAuthenticating) return <Spinner />;
+    if (isAuthenticating) return <SpinnerFull></SpinnerFull>;
 
     return <>{children}</>;
 };

@@ -16,8 +16,8 @@ function App() {
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
           <QuizAttemptSnapshotHubProvider>
-            <RouterProvider router={router} ></RouterProvider>
-            {/* <ReactQueryDevtools initialIsOpen={false} /> */}
+            <RouterProvider router={router}></RouterProvider>
+            <ReactQueryDevtools initialIsOpen={false} />
           </QuizAttemptSnapshotHubProvider>
           <Toaster richColors expand={false} position="top-right" closeButton />
         </QueryClientProvider>

@@ -34,20 +34,6 @@ export const ChoiceList: React.FC<ChoiceListProps> = ({ type, choices }) => {
 
   return (
     <div>
-      {type === "MSQ" && (
-        <Text
-          strong
-          style={{
-            display: "block",
-            marginBottom: isMobile ? 10 : 12,
-            fontSize: isMobile ? 13 : 14,
-            color: "#722ed1",
-            fontWeight: 600,
-          }}
-        >
-          ☑️ Select all that apply:
-        </Text>
-      )}
       <List
         size="small"
         bordered={false}

@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { ChoiceDTO } from "@/types/choice/choiceDTO";
 import { QuestionDTO } from "@/types/question/questionDTO";
 import { QuizAttemptAnswerDTO } from "@/types/quizAttemptAnswer/quizAttemptAnswerDTO";
-import { Card, Row, Col, Tag, Typography, Space, Pagination } from "antd";
-
-const { Title, Text, Paragraph } = Typography;
+import { Row, Col, Pagination } from "antd";
+import { useOutletContext } from "react-router-dom";
+import QuestionResultCard from "./QuestionResultCard";
 
 interface QuestionResultsListProps {
     questions: QuestionDTO[] | undefined;
@@ -12,31 +11,25 @@ interface QuestionResultsListProps {
 }
 
 const QuestionResultsList = ({ questions, answers }: QuestionResultsListProps) => {
+    const darkMode = useOutletContext<boolean>();
     const [currentPage, setCurrentPage] = useState(1);
-    const pageSize = 4; // 4 cards per page (2x2 grid)
+    const pageSize = 4;
 
     useEffect(() => {
         setCurrentPage(1);
     }, [questions]);
 
     if (!questions || !answers) {
-        return <div className="text-center text-gray-500 py-8">No results to display</div>;
+        return (
+            <div className={`text-center py-8 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                No results to display
+            </div>
+        );
     }
 
     const getAnswerForQuestion = (questionId: string) =>
         answers.find(answer => answer.snapshotQuestionId === questionId);
 
-    const getUserSelectedChoices = (question: QuestionDTO, answer: QuizAttemptAnswerDTO) => {
-        const userChoiceIds = answer.quizAttemptAnswerChoices.map(choice => choice.choiceId);
-        return question.choices.filter(choice => userChoiceIds.includes(choice.id));
-    };
-
-    const getCorrectChoices = (question: QuestionDTO) =>
-        question.choices.filter(choice => choice.isCorrect);
-
-    const getChoicesText = (choices: ChoiceDTO[]) => choices.map(c => c.text).join(", ");
-
-    // Pagination logic
     const totalQuestions = questions.length;
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
@@ -45,76 +38,35 @@ const QuestionResultsList = ({ questions, answers }: QuestionResultsListProps) =
     return (
         <div className="mt-3">
             <Row gutter={[16, 16]}>
-                {paginatedQuestions.map((question, index) => {
+                {paginatedQuestions.map((question, idx) => {
                     const answer = getAnswerForQuestion(question.id);
                     if (!answer) return null;
 
-                    const isCorrect = answer.isCorrect;
-                    const userChoices = getUserSelectedChoices(question, answer);
-                    const correctChoices = getCorrectChoices(question);
-                    const globalIndex = startIndex + index + 1;
-
                     return (
                         <Col xs={24} lg={12} key={question.id}>
-                            <Card bordered style={{ height: "100%", border: '1px solid #E2DFE1' }} hoverable={true} className="shadow-sm">
-                                <Row justify="space-between" align="middle" className="mb-3">
-                                    <Col>
-                                        <Title level={5} style={{ margin: 0 }}>
-                                            {globalIndex}. {question.name}
-                                        </Title>
-                                    </Col>
-                                    <Col>
-                                        <Tag color={isCorrect ? "green" : "red"}>
-                                            {isCorrect ? "Correct" : "Incorrect"}
-                                        </Tag>
-                                    </Col>
-                                </Row>
-
-                                <Space direction="vertical" size="small" className="w-full">
-                                    <div>
-                                        <Text type="secondary">Your answer: </Text>
-                                        <Text strong style={{ color: isCorrect ? "#52c41a" : "#f5222d" }}>
-                                            {userChoices.length > 0 ? getChoicesText(userChoices) : "No answer"}
-                                        </Text>
-                                    </div>
-
-                                    {!isCorrect && (
-                                        <div>
-                                            <Text type="secondary">Correct answer: </Text>
-                                            <Text strong style={{ color: "#52c41a" }}>
-                                                {getChoicesText(correctChoices)}
-                                            </Text>
-                                        </div>
-                                    )}
-
-                                    {question.explanation && (
-                                        <Paragraph className="mt-2 mb-0 border-t border-t-[#f0f0f0] pt-2">
-                                            <Text strong>Explanation: </Text>
-                                            {question.explanation}
-                                        </Paragraph>
-                                    )}
-                                </Space>
-                            </Card>
+                            <QuestionResultCard
+                                question={question}
+                                answer={answer}
+                                index={startIndex + idx + 1}
+                                darkMode={darkMode}
+                            />
                         </Col>
                     );
                 })}
             </Row>
 
-            {/* Left-aligned Pagination */}
-            {
-                totalQuestions > pageSize && (
-                    <Pagination
-                        current={currentPage}
-                        pageSize={pageSize}
-                        total={totalQuestions}
-                        onChange={(page) => setCurrentPage(page)}
-                        showSizeChanger={false}
-                        style={{ marginTop: 12 }}
-                        align="end"
-                    />
-                )
-            }
-        </div >
+            {totalQuestions > pageSize && (
+                <Pagination
+                    current={currentPage}
+                    pageSize={pageSize}
+                    total={totalQuestions}
+                    onChange={(page) => setCurrentPage(page)}
+                    showSizeChanger={false}
+                    style={{ marginTop: 12, textAlign: 'left' }}
+                    align="end"
+                />
+            )}
+        </div>
     );
 };
 

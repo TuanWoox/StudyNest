@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Flex, Button, Typography, Empty, Space, Collapse } from "antd";
+import { Flex, Button, Typography, Empty, Space, Collapse, theme } from "antd";
 import {
   PlusOutlined,
   InboxOutlined,
   UpOutlined,
   DownOutlined,
 } from "@ant-design/icons";
+
+const { useToken } = theme;
 import { QuestionForm } from "./QuestionForm";
 import { QuestionItem } from "./QuestionItem";
 import useUpdateQuestion from "@/hooks/questionHook/useUpdateQuestion";
@@ -30,6 +32,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
   onDirtyChange,
   showConfirmDiscard,
 }) => {
+  const { token } = useToken();
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
     null
   );
@@ -175,13 +178,12 @@ const QuestionList: React.FC<QuestionListProps> = ({
         justify="space-between"
         align="center"
         style={{
-          marginBottom: 24,
-          padding: "16px 0",
+          marginBottom: token.marginLG,
         }}
         wrap="wrap"
-        gap={16}
+        gap={token.margin}
       >
-        <Space direction="vertical" size={4}>
+        <Space direction="vertical" size={token.marginXXS}>
           <Title level={4} style={{ margin: 0 }}>
             Questions
           </Title>
@@ -199,7 +201,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
               icon={isAllExpanded ? <UpOutlined /> : <DownOutlined />}
               onClick={handleToggleAllQuestions}
               style={{
-                borderRadius: 8,
+                borderRadius: token.borderRadiusSM,
                 fontWeight: 500,
               }}
               size={isMobile ? "middle" : "large"}
@@ -213,10 +215,10 @@ const QuestionList: React.FC<QuestionListProps> = ({
             onClick={handleStartAddQuestion}
             size={isMobile ? "middle" : "large"}
             style={{
-              borderRadius: 8,
+              borderRadius: token.borderRadiusSM,
               height: isMobile ? 36 : 44,
-              paddingLeft: isMobile ? 16 : 24,
-              paddingRight: isMobile ? 16 : 24,
+              paddingLeft: isMobile ? token.padding : token.paddingLG,
+              paddingRight: isMobile ? token.padding : token.paddingLG,
               fontWeight: 500,
             }}
             className="add-question-btn"
@@ -231,12 +233,12 @@ const QuestionList: React.FC<QuestionListProps> = ({
         style={{
           flex: 1,
           overflow: "auto",
-          paddingBottom: 16,
+          paddingBottom: token.margin,
         }}
       >
         {/* Add Question Form */}
         {isAddingQuestion && (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ marginBottom: token.marginLG }}>
             <QuestionForm
               quizId={quizId}
               onSave={handleCreateQuestion}
@@ -256,6 +258,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
             style={{
               backgroundColor: "transparent",
               border: "none",
+              alignItems: "center",
             }}
             expandIconPosition="end"
             items={questions.map((question, index) => {
@@ -266,7 +269,9 @@ const QuestionList: React.FC<QuestionListProps> = ({
                 label: (
                   <div
                     style={{
-                      padding: isMobile ? "4px 0" : "8px 0",
+                      padding: isMobile
+                        ? `${token.marginXXS}px 0`
+                        : `${token.marginXS}px 0`,
                       fontSize: isMobile ? 14 : 15,
                       fontWeight: 500,
                     }}
@@ -275,7 +280,13 @@ const QuestionList: React.FC<QuestionListProps> = ({
                   </div>
                 ),
                 children: isEditing ? (
-                  <div style={{ padding: isMobile ? "12px 0" : "16px 0" }}>
+                  <div
+                    style={{
+                      padding: isMobile
+                        ? `${token.marginSM}px 0`
+                        : `${token.margin}px 0`,
+                    }}
+                  >
                     <QuestionForm
                       question={question}
                       quizId={quizId}
@@ -286,7 +297,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
                     />
                   </div>
                 ) : (
-                  <div style={{ padding: isMobile ? "12px 0" : "16px 0" }}>
+                  <div>
                     <QuestionItem
                       question={question}
                       index={index}
@@ -297,11 +308,10 @@ const QuestionList: React.FC<QuestionListProps> = ({
                   </div>
                 ),
                 style: {
-                  marginBottom: 16,
-                  backgroundColor: "#ffffff",
-                  borderRadius: 12,
-                  border: "1px solid #f0f0f0",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                  marginBottom: token.margin,
+                  backgroundColor: token.colorBgContainer,
+                  borderRadius: token.borderRadiusLG,
+                  border: `1px solid ${token.colorBorder}`,
                   overflow: "hidden",
                 },
               };
@@ -311,11 +321,13 @@ const QuestionList: React.FC<QuestionListProps> = ({
           !isAddingQuestion && (
             <Empty
               image={
-                <InboxOutlined style={{ fontSize: 64, color: "#bfbfbf" }} />
+                <InboxOutlined
+                  style={{ fontSize: 64, color: token.colorTextDisabled }}
+                />
               }
               description={
-                <Space direction="vertical" size={8}>
-                  <Text strong style={{ fontSize: 16, color: "#595959" }}>
+                <Space direction="vertical" size={token.marginXS}>
+                  <Text strong style={{ fontSize: 16, color: token.colorText }}>
                     No Questions Yet
                   </Text>
                   <Text type="secondary" style={{ fontSize: 14 }}>
@@ -325,9 +337,9 @@ const QuestionList: React.FC<QuestionListProps> = ({
               }
               style={{
                 padding: "60px 20px",
-                backgroundColor: "#fafafa",
-                borderRadius: 12,
-                border: "2px dashed #d9d9d9",
+                backgroundColor: token.colorBgLayout,
+                borderRadius: token.borderRadiusLG,
+                border: `2px dashed ${token.colorBorder}`,
               }}
             >
               <Button
@@ -336,7 +348,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
                 onClick={handleStartAddQuestion}
                 size="large"
                 style={{
-                  borderRadius: 8,
+                  borderRadius: token.borderRadiusSM,
                   height: 44,
                   paddingLeft: 32,
                   paddingRight: 32,

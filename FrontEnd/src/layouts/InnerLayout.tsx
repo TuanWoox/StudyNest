@@ -4,8 +4,7 @@ import { useNavigate, Outlet, Navigate } from "react-router-dom";
 import {
   UserOutlined,
   SettingOutlined,
-  LogoutOutlined,
-  HourglassOutlined,
+  LogoutOutlined
 } from "@ant-design/icons";
 import {
   Avatar,
@@ -13,7 +12,6 @@ import {
   Menu,
   ConfigProvider,
   Space,
-  Button,
   theme
 } from "antd";
 import { SunIcon, MoonIcon } from "@heroicons/react/24/outline";
@@ -24,6 +22,7 @@ import { resetAuthState, selectRole } from "@/store/authSlice";
 import { useReduxSelector } from "@/hooks/reduxHook/useReduxSelector";
 import { useReduxDispatch } from "@/hooks/reduxHook/useReduxDispatch";
 import { useQueryClient } from "@tanstack/react-query";
+import RouteTracker from "@/components/RouteTracker/RouteTracker";
 
 const InnerLayout = () => {
   const navigate = useNavigate();
@@ -148,6 +147,7 @@ const InnerLayout = () => {
         >
           {/* quan trọng: min-h-0 + overflow-hidden để chặn tràn xuống dưới */}
           <div className="flex-1 flex min-h-0 overflow-hidden transition-colors duration-500">
+            <RouteTracker></RouteTracker>
             <Outlet context={darkMode} />
           </div>
         </ProLayout>

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Input } from 'antd';
+import { Input, Tooltip } from 'antd';
+import { EditOutlined } from '@ant-design/icons';
 
 interface TitleInputProps {
     value: string;
@@ -9,12 +10,13 @@ interface TitleInputProps {
 
 const TitleInput: React.FC<TitleInputProps> = ({ value, onChange, darkMode }) => {
     return (
-        <div className="flex-1 mr-6 group">
+        <div className="flex-1 mr-6 group relative" title="Click to edit title" role="group">
             <Input
-                placeholder="✨ Start writing your thoughts..."
+                placeholder="Start writing your thoughts..."
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className={`${darkMode ? "dark" : "light"}`}
+                aria-label="Note title"
+                className={`${darkMode ? "dark" : "light"} cursor-text`}
                 style={{
                     fontSize: "2.5rem",
                     fontWeight: 700,
@@ -22,14 +24,30 @@ const TitleInput: React.FC<TitleInputProps> = ({ value, onChange, darkMode }) =>
                     border: "none",
                     boxShadow: "none",
                     background: "transparent",
-                    padding: "5px 0",
+                    padding: "0",
                     color: darkMode ? "#FFFFFF" : "#37352F",
                     fontFamily: "inherit",
+                    outline: "none",
                 }}
             />
+
+            {/* underline: expand on hover or when input is focused */}
             <div
-                className={`h-0.5 w-0 group-hover:w-full transition-all duration-500 ${darkMode ? "bg-blue-400" : "bg-blue-500"} mt-2`}
+                className={`h-0.5 w-full group-hover:bg-blue-400 group-focus-within:bg-blue-400 transition-all duration-300 ${darkMode ? 'bg-[#374151]' : 'bg-[#E5E7EB]'}`}
             />
+
+            {/* edit icon appears on hover/focus */}
+            <Tooltip title="Edit title" mouseEnterDelay={0.15}>
+                <EditOutlined
+                    className="absolute right-0 top-5 text-gray-400"
+                    style={{ fontSize: 18, pointerEvents: 'none' }}
+                    aria-hidden="true"
+                />
+            </Tooltip>
+
+            <div className={`mt-1 text-xs ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                Click to edit the title
+            </div>
         </div>
     );
 };

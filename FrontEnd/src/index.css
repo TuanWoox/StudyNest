@@ -178,3 +178,7 @@
             transform: rotate(360deg);
   }
 }
+
+.ant-collapse-header {
+  align-items: center !important;
+}

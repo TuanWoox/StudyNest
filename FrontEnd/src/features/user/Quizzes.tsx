@@ -373,15 +373,32 @@ const Quizzes: React.FC = () => {
                 zIndex: 10,
               }}
             >
-              <Pagination
-                current={page}
-                pageSize={pageSize}
-                total={totalElements}
-                onChange={handleTableChange}
-                showTotal={(total, range) =>
-                  `${range[0]}-${range[1]} of ${total} quizzes`
-                }
-              />
+              <div
+                style={{
+                  padding: "0.5rem 1rem",
+                  background: token.colorBgElevated,
+                  border: `1px solid ${token.colorBorderSecondary}`,
+                  borderRadius: "10px",
+                  boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                }}
+              >
+                <Pagination
+                  current={page}
+                  pageSize={pageSize}
+                  total={totalElements}
+                  onChange={handleTableChange}
+                  showTotal={(total, range) => (
+                    <span
+                      style={{
+                        color: token.colorTextSecondary,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {range[0]}–{range[1]} of <b>{total}</b> quizzes
+                    </span>
+                  )}
+                />
+              </div>
             </Flex>
           </>
         ) : (

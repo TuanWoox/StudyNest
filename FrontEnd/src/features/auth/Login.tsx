@@ -4,7 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import Spinner from '@/components/Spinner/Spinner';
 import useLogin from '@/hooks/authHook/useLogin';
 import { useReduxSelector } from '@/hooks/reduxHook/useReduxSelector';
-import { initAuthState, selectRole } from '@/store/authSlice';
+import { initAuthState, selectRole, selectUserId } from '@/store/authSlice';
 import { ERole } from '@/utils/enums/ERole';
 import GoogleLogin from '@/components/GoogleLogin/GoogleLogin';
 import { useReduxDispatch } from '@/hooks/reduxHook/useReduxDispatch';
@@ -20,6 +20,7 @@ const Login: React.FC = () => {
     const { login, isAuthenticating } = useLogin();
     const role = useReduxSelector(selectRole);
     const dispatch = useReduxDispatch();
+    const userId = useReduxSelector(selectUserId);
 
     const {
         register,
@@ -37,32 +38,28 @@ const Login: React.FC = () => {
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const token = params.get("token");
-        if (!token) {
-            params.delete("token");
-            return;
-        }
 
-        window.localStorage.setItem("accessToken", token);
-        dispatch(initAuthState(token));
+        if (token) {
+            window.localStorage.setItem("accessToken", token);
+            dispatch(initAuthState(token));
+        }
+    }, [dispatch]);
+
+    // Handle redirect if user reloads the page
+    if (role) {
+        const lastRoute = localStorage.getItem('lastRoute');
+        const userIdLocal = localStorage.getItem('userId');
+        //Only the same user can reload the page or move to that previous page when log in again
+        if (lastRoute && userIdLocal === userId) {
+            return <Navigate to={lastRoute} replace />;
+        }
 
         switch (role) {
             case ERole.User:
-                navigate("/user/notes");
-                break;
+                return <Navigate to="/user/notes" replace />;
             case ERole.Admin:
-                navigate("/admin/dashboard");
-                break;
-            default:
-                break;
+                return <Navigate to="/admin/dashboard" replace />;
         }
-    }, []);
-
-    // Handle role-based redirects
-    switch (role) {
-        case ERole.User:
-            return <Navigate to="/user/notes" replace />
-        case ERole.Admin:
-            return <Navigate to="/admin/dashboard" replace />
     }
 
     const onSubmit = (data: LoginFormInputs) => {
@@ -74,7 +71,7 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div className="w-full max-w-xl rounded-lg bg-white p-12 shadow-xl border border-gray-200">
+        <div className="w-full max-w-xl rounded-lg bg-white p-12 shadow-xl border border-gray-200 ">
             <div className="flex flex-col items-center">
                 <div className="text-5xl font-bold text-gray-900 text-center mb-10">
                     Study Nest
@@ -164,7 +161,7 @@ const Login: React.FC = () => {
                 </form>
 
                 <div className="my-7 w-full">
-                    <GoogleLogin />
+                    <GoogleLogin disable={isAuthenticating} />
                 </div>
 
                 {/* Links */}
