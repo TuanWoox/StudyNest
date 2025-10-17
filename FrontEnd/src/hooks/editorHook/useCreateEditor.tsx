@@ -153,7 +153,7 @@ export function useCreateEditor({
                             sanitize: { u: {} },
                             shortcut: 'CMD+U',
                             tagName: 'U',
-                            toolboxIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="4" y1="20" x2="20" y2="20"/></svg>`,
+                            toolboxIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 3v9a6 6 0 0 0 12 0V3M4 21h16"/></svg>`,
                         }),
                     },
                     italic: {
@@ -161,7 +161,7 @@ export function useCreateEditor({
                             sanitize: { em: {} },
                             shortcut: 'CMD+I',
                             tagName: 'EM',
-                            toolboxIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>`,
+                            toolboxIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M10 5h8v2h-1.5L8.5 17H10v2H2v-2h1.5l8.5-10H10V5z"/></svg>`,
                         }),
                     },
                     strikethrough: Strikethrough,
