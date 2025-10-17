@@ -67,22 +67,18 @@ const QuizView: React.FC = () => {
 
     return (
         <div
-            className={`w-full ${darkMode ? "bg-[#0f0f0f] text-gray-100" : "bg-gray-50 text-gray-900"}`}
+            className={`w-full lg:max-w-5xl mx-auto p-4 overflow-y-auto`}
+            style={{ scrollbarWidth: "none" }}
         >
-            <div
-                className="w-full lg:max-w-5xl mx-auto p-4 overflow-y-auto"
-                style={{ scrollbarWidth: "none" }}
-            >
-                <QuizHeader />
-                <QuizProgress />
-                <QuestionCard />
-                <QuizNavigation
-                    onPrevious={onPrevious}
-                    onNext={onNext}
-                    onSubmit={onSubmit}
-                    isSubmitting={isSubmitting}
-                />
-            </div>
+            <QuizHeader />
+            <QuizProgress />
+            <QuestionCard />
+            <QuizNavigation
+                onPrevious={onPrevious}
+                onNext={onNext}
+                onSubmit={onSubmit}
+                isSubmitting={isSubmitting}
+            />
         </div>
     );
 };
