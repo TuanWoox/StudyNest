@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, theme } from "antd";
 import { SaveOutlined, CloseOutlined } from "@ant-design/icons";
-import ModalConfirm from "@/components/ModalConfirm";
+import ModalConfirm from "@/components/ModalConfirm/ModalConfirm";
 import { useReduxSelector } from "@/hooks/reduxHook/useReduxSelector";
 import { selectDarkMode } from "@/store/themeSlice";
 

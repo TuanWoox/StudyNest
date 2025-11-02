@@ -5,9 +5,9 @@ import { QuizAttemptSnapshotDTO } from "@/types/quizAttemptSnapshot/quizAttemptS
 
 const quizAttemptSnapshotService = {
 
-    getOneByIdForAttempting: async (id: string): Promise<QuizAttemptSnapshotDTO> => {
+    getOneByIdForAttempting: async (id: string): Promise<ReturnResult<QuizAttemptSnapshotDTO>> => {
         const { data } = await instance.get<ReturnResult<QuizAttemptSnapshotDTO>>(`/QuizAttemptSnapshot/GetOneByIdForAttempting/${id}`)
-        return data.result;
+        return data;
     }
 
 }

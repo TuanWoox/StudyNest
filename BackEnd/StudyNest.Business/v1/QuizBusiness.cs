@@ -91,8 +91,6 @@ namespace StudyNest.Business.v1
                 await _context.AddAsync(newQuiz);
                 await _context.SaveChangesAsync();
                 result.Result = new {id = newQuiz.Id.ToString() };
-                // Enqueue A Background Job To Convert This Quiz To A Snapshot
-                BackgroundJob.Enqueue<IQuizAttemptSnapshotBusiness>(x => x.CreateSnapShot(newQuiz.Id.ToString().Trim()));
             }
             catch (Exception ex)
             {

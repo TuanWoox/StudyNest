@@ -4,7 +4,7 @@ import { DeleteOutlined } from "@ant-design/icons";
 import { Note } from "@/types/note/notes";
 import { getPlainTextFromEditorJs } from "@/utils/getPlainTextFromEditorJs";
 import useDeleteNote from "@/hooks/noteHook/useDeleteNote";
-import ModalConfirm from "@/components/ModalConfirm";
+import ModalConfirm from "@/components/ModalConfirm/ModalConfirm";
 import { useReduxSelector } from "@/hooks/reduxHook/useReduxSelector";
 import { selectDarkMode } from "@/store/themeSlice";
 

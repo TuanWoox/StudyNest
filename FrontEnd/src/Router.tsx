@@ -19,7 +19,7 @@ import ManageUser from "./features/admin/ManageUser";
 import AdminFeedback from "./features/admin/ManageFeedback";;
 import QuizGeneration from "./features/user/quizzes/QuizGeneration";
 import QuizDetailPage from "./features/user/quizzes/QuizDetailPage";
-import QuizView from "./features/user/quizzes/QuizAttempt/QuizView";
+import QuizView from "./features/user/quizzes/QuizAttempt/QuizAttemptView";
 import QuizResultView from "./features/user/quizzes/QuizAttemptResult/QuizResultView";
 
 export const router = createBrowserRouter([
@@ -41,8 +41,8 @@ export const router = createBrowserRouter([
       { path: "quiz", element: <Quizzes /> },
       { path: "quiz/generate", element: <QuizGeneration /> },
       { path: "quiz/:id", element: <QuizDetailPage /> },
-      { path: "quizAttempt/:id", element: <QuizView /> },
-      { path: "quizAttemptResult/:id", element: <QuizResultView /> },
+      { path: "quiz/quizAttempt/:id", element: <QuizView /> },
+      { path: "quiz/quizAttemptResult/:id", element: <QuizResultView /> },
       { path: "analytics", element: <Analytics /> },
       { path: "feedback", element: <Feedback /> },
     ],

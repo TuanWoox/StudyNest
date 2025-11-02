@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Hangfire;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using StudyNest.Business.Repository;
@@ -51,36 +52,44 @@ namespace StudyNest.Business.v1
                                                                      .OrderByDescending(x => x.DateCreated)
                                                                      .FirstOrDefaultAsync();
 
-                // If found and the quiz questions are not null or empty, map to DTO and deserialize the questions
                 if (existingSnapshot != null && !string.IsNullOrEmpty(existingSnapshot.QuizQuestions))
                 {
-                    
-                    var mappedResult = _mapper.Map<QuizAttemptSnapshotDTO>(existingSnapshot);
-                    mappedResult.QuizQuestionsParsed = JsonSerializer.Deserialize<List<QuestionDTO>>(mappedResult.QuizQuestions)!;
-                    //Remove the IsCorrect property from the choices to prevent cheating
-                    foreach (var question in mappedResult.QuizQuestionsParsed)
+                    var needToCreateSnapShot = await CompareQuizSnapShotContentForCreatingNewOne(existingSnapshot,quizId);
+                    if (!needToCreateSnapShot.Result && needToCreateSnapShot.Message == null)
                     {
-                        if(question.Choices != null && question.Choices.Count > 0)
+                        var mappedResult = _mapper.Map<QuizAttemptSnapshotDTO>(existingSnapshot);
+                        mappedResult.QuizQuestionsParsed = JsonSerializer.Deserialize<List<QuestionDTO>>(mappedResult.QuizQuestions)!;
+                        //Remove the IsCorrect property from the choices to prevent cheating
+                        foreach (var question in mappedResult.QuizQuestionsParsed.Where(q => q.Choices != null && q.Choices.Count > 0))
                         {
-                            foreach(var choice in question.Choices)
+                            foreach (var choice in question.Choices)
                             {
                                 choice.IsCorrect = false;
                             }
                         }
+                        //After that set quiz questions to "" for cleaner result
+                        mappedResult.QuizQuestions = "";
+                        result.Result = mappedResult;
                     }
-                    //After that set quiz questiosn to "" for cleaner result
-                    mappedResult.QuizQuestions = "";
-                    //Assign the mapped result to the return result
-                    result.Result = mappedResult;
+                    else if (needToCreateSnapShot.Result)
+                    {
+                        // Snapshot creation enqueued, return empty result, frontend based on empty result to display that quiz is being prepared
+                        return result;
+                    }
+                    else if (needToCreateSnapShot.Message != null)
+                    {
+                        result.Message = needToCreateSnapShot.Message;
+                    }
                 }
                 else
                 {
                     var fetchedQuiz = await _context.Quizzes.Where(x => x.Id == quizId).FirstOrDefaultAsync();
-                    if(!(fetchedQuiz != null && fetchedQuiz.IsBeingConvertToSnapShot == true))
+                    if(!(fetchedQuiz != null && fetchedQuiz.IsBeingConvertToSnapShot))
                     {
                         //Return the appropriate message if not founds
-                        result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz snapshot", quizId);
+                        result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz", quizId);
                     }
+
                 }
             }
             catch (Exception ex)
@@ -95,13 +104,15 @@ namespace StudyNest.Business.v1
             ReturnResult<QuizAttemptSnapshot> result = new ReturnResult<QuizAttemptSnapshot>();
             try
             {
-                await Task.Delay(20000); // Simulate some delay for demonstration purposes
+                // Simulate some delay for demonstration purposes, keep this for SignalR demonstration
+                await Task.Delay(5000); 
                 var existingQuiz = await _context.Quizzes.Where(x => x.Id == quizId.Trim())
                                                 .Include(x => x.Questions)
                                                 .ThenInclude(q => q.Choices)
                                                 .FirstOrDefaultAsync();
                                                 
                 if(existingQuiz != null)
+
                 {
                     var questionsDto = _mapper.Map<List<QuestionDTO>>(existingQuiz.Questions);
 
@@ -131,6 +142,117 @@ namespace StudyNest.Business.v1
                 StudyNestLogger.Instance.Error(ex);
             }
             return result;
+        }
+        private async Task<ReturnResult<bool>> CompareQuizSnapShotContentForCreatingNewOne(QuizAttemptSnapshot existingSnapshot,string quizId)
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+
+            try
+            {
+                // Default to false - no need to create snapshot
+                result.Result = false;
+
+                // Fetch quiz with questions and choices
+                var existingQuiz = await _context.Quizzes.Where(x => x.Id == quizId.Trim())
+                                                        .Include(x => x.Questions)
+                                                        .ThenInclude(q => q.Choices)
+                                                        .FirstOrDefaultAsync();
+
+                if (existingQuiz == null)
+                {
+                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz", quizId);
+                    return result;
+                }
+
+                // If snapshot exists, compare content
+                if (existingSnapshot != null)
+                {
+                    var currentQuestionsDto = _mapper.Map<List<QuestionDTO>>(existingQuiz.Questions);
+                    var snapshotQuestionsDto = JsonSerializer.Deserialize<List<QuestionDTO>>(existingSnapshot.QuizQuestions);
+                    result.Result = snapshotQuestionsDto == null || HasContentChanged(currentQuestionsDto, snapshotQuestionsDto);
+                }
+                else
+                {
+                    // No snapshot exists - need to create one
+                    result.Result = true;
+                }
+
+                // Enqueue background job if snapshot creation is needed
+                if (result.Result)
+                {
+                    existingQuiz.IsBeingConvertToSnapShot = true;
+                    _context.Quizzes.Update(existingQuiz);
+                    BackgroundJob.Enqueue<IQuizAttemptSnapshotBusiness>(x => x.CreateSnapShot(quizId));
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message ?? ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return result;
+        }
+        private bool HasContentChanged(List<QuestionDTO> current, List<QuestionDTO> snapshot)
+        {
+            // Sort both lists by Question Id for consistent comparison
+            var currentSorted = current
+                .OrderBy(q => q.Id)
+                .Select(q => new
+                {
+                    Question = q,
+                    SortedChoices = q.Choices?.OrderBy(c => c.Id).ToList()
+                })
+                .ToList();
+
+            var snapshotSorted = snapshot
+                .OrderBy(q => q.Id)
+                .Select(q => new
+                {
+                    Question = q,
+                    SortedChoices = q.Choices?.OrderBy(c => c.Id).ToList()
+                })
+                .ToList();
+
+            // Check if question count differs
+            if (currentSorted.Count != snapshotSorted.Count)
+                return true;
+
+            // Compare each question
+            for (int i = 0; i < currentSorted.Count; i++)
+            {
+                var curr = currentSorted[i].Question;
+                var snap = snapshotSorted[i].Question;
+
+                // Compare question properties
+                if (curr.Id != snap.Id ||
+                    curr.Name != snap.Name ||
+                    curr.Type != snap.Type ||
+                    curr.Explanation != snap.Explanation ||
+                    currentSorted[i].SortedChoices?.Count != snapshotSorted[i].SortedChoices?.Count)
+                {
+                    return true;
+                }
+
+                // Compare choices if both exist
+                var currChoices = currentSorted[i].SortedChoices;
+                var snapChoices = snapshotSorted[i].SortedChoices;
+
+                if (currChoices != null && snapChoices != null)
+                {
+                    for (int j = 0; j < currChoices.Count; j++)
+                    {
+                        if (currChoices[j].Id != snapChoices[j].Id ||
+                            currChoices[j].Text != snapChoices[j].Text ||
+                            currChoices[j].IsCorrect != snapChoices[j].IsCorrect)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            // No changes detected
+            return false;
         }
     }
 }

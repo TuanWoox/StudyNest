@@ -167,7 +167,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
             flexWrap: "wrap",
           }}
         >
-          <Link to={`/user/quizAttempt/${quiz.id}`} style={{ flex: 1 }}>
+          <Link to={`/user/quiz/quizAttempt/${quiz.id}`} style={{ flex: 1 }}>
             <Button
               type="primary"
               icon={<PlayCircleOutlined />}

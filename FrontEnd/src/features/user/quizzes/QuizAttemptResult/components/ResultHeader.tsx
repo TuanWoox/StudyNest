@@ -48,7 +48,7 @@ const ResultHeader = ({
         return () => clearTimeout(timeout);
     }, [score]);
 
-    const onRetake = () => navigate(`/user/quizAttempt/${id}`);
+    const onRetake = () => navigate(`/user/quiz/quizAttempt/${id}`);
 
     const getFeedbackMessage = () => {
         if (score < 70) {

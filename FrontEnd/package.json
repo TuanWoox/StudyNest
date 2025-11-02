@@ -47,6 +47,7 @@
     "editorjs-text-color-plugin": "git+https://github.com/dariox64/editorjs-text-color-plugin.git",
     "editorjs-undo": "^2.0.28",
     "jwt-decode": "^4.0.0",
+    "lucide-react": "^0.552.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.64.0",

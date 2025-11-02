@@ -1,7 +1,7 @@
 import useGetOneQuizAttemptById from "@/hooks/quizAttempt/useGetOneQuizAttemptById";
-import { useOutletContext, useParams } from "react-router-dom";
-import ResultHeader from "./ResultHeader";
-import QuestionResultsList from "./QuestionResultsList";
+import {useParams } from "react-router-dom";
+import ResultHeader from "./components/ResultHeader";
+import QuestionResultsList from "./components/QuestionResultsList";
 import Spinner from "@/components/Spinner/Spinner";
 
 const QuizResultView = () => {

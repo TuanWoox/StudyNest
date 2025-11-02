@@ -22,7 +22,7 @@ export const useSubmitQuizAttempt = () => {
         onSuccess: (quizAttemptId) => {
             if (quizAttemptId) {
                 // Navigate to a page after successful submission
-                navigate(`/user/quizAttemptResult/${quizAttemptId}`);
+                navigate(`/user/quiz/quizAttemptResult/${quizAttemptId}`);
                 dispatch(resetState())
             }
         },

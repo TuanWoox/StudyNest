@@ -175,7 +175,7 @@ const QuizDetailPage: React.FC = () => {
   }
 
   const onTakeQuiz = () => {
-    navigate(`/user/quizAttempt/${id}`);
+    navigate(`/user/quiz/quizAttempt/${id}`);
   };
 
   // Quiz data successfully loaded
