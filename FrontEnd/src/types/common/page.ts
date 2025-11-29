@@ -22,7 +22,7 @@ export interface Page<T> {
     size: number;
     pageNumber: number;
     totalElements: number;
-    orders: OrderMapping[];
-    filter: FilterMapping[];
-    selected: T[];
+    orders?: OrderMapping[];
+    filter?: FilterMapping[];
+    selected?: T[];
 }

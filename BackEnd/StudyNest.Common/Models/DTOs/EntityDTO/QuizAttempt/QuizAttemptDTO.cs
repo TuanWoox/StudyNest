@@ -17,8 +17,6 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.QuizAttempt
     public class QuizAttemptDTO: BaseEntity<string>
     {
         [Required]
-        public string QuizId { get; set; }
-        [Required]
         public string UserId { get; set; }
         [Required]
         public string QuizAttemptSnapshotId { get; set; }

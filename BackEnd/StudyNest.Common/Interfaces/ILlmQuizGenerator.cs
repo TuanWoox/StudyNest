@@ -10,7 +10,7 @@ namespace StudyNest.Common.Interfaces
 {
     public interface ILlmQuizGenerator
     {
-        Task<Quiz> GenerateAsync(CreateQuizDTO request);
+        Task<Quiz> GenerateAsync(CreateQuizDTO request, string userId = "");
 
     }
 }

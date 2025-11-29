@@ -9,5 +9,6 @@ namespace StudyNest.Common.Interfaces
     public interface IUserContext
     {
         string UserId { get; }
+        bool IsAdmin { get; }
     }
 }

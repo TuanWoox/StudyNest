@@ -16,9 +16,12 @@ namespace StudyNest.Common.Interfaces
     {
         Task<ReturnResult<PagedData<QuizListDTO, string>>> GetAllQuizByUserId(Page<string> page, bool isExported = false);
         Task<ReturnResult<Quiz>> GetQuizDetail(string id);
-        Task<ReturnResult<object>> GenerateAsync(CreateQuizDTO prompt);
+        Task<ReturnResult<CreateQuizJobResponseDTO>> EnqueueGenerateAsync(CreateQuizDTO dto);
+        Task GenerateQuizInBackground(string jobId, CreateQuizDTO dto, string userId);
+        Task<ReturnResult<string>> CreateQuizFromScratch(CreateManualQuizDTO dto);
         Task<ReturnResult<bool>> UpdateQuiz(UpdateQuizDTO request);
         Task<ReturnResult<bool>> DeleteById(string id);
+        Task<ReturnResult<bool>> ValidateNoteContent(string noteId);
     }
 }
     

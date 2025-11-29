@@ -20,17 +20,21 @@ namespace StudyNest.Common.Llm
         {
             _client = client;
             _pipe = pipe;
-            this._user = userContext;
+            _user = userContext;
         }
 
-        public async Task<Quiz> GenerateAsync(CreateQuizDTO request)
+        public async Task<Quiz> GenerateAsync(CreateQuizDTO request, string userId = "")
         {
             try
             {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userId = _user.UserId;
+                }
                 var (prompt, images) = _pipe.BuildPrompt(request);
                 var raw = await _client.GenerateAsync(prompt, images);
 
-                var quizEntity = _pipe.ParseToQuiz(raw, _user.UserId, request.NoteId);
+                var quizEntity = _pipe.ParseToQuiz(raw, userId, request.NoteId, request.Difficulty);
 
                 if (quizEntity.Questions == null || quizEntity.Questions.Count == 0)
                     return quizEntity;
@@ -40,7 +44,6 @@ namespace StudyNest.Common.Llm
             }
             catch (InvalidOperationException ex)
             {
-                // Giữ nguyên InvalidOperationException gốc để phân biệt lỗi business
                 StudyNestLogger.Instance.Error("LLM GenerateAsync (business) error: " + ex.Message);
                 throw;
             }

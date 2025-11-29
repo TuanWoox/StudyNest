@@ -1,6 +1,7 @@
 ﻿using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Configuration;
@@ -31,18 +32,27 @@ namespace StudyNest.Business.v1
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly ApplicationDbContext _appDbContext;
+        private readonly IUserContext _userContext;
+        private readonly IEmailBusiness _emailBusiness;
+        private readonly ISettingBusiness _settingBusiness;
 
         public AuthBusiness(
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
             RoleManager<ApplicationRole> roleManager,
-            ApplicationDbContext applicationDbContext
+            ApplicationDbContext applicationDbContext,
+            IUserContext userContext,
+            IEmailBusiness emailBusiness,
+            ISettingBusiness settingBusiness
         )
         {
             _configuration = configuration;
             _userManager = userManager;
             _roleManager = roleManager;
             _appDbContext = applicationDbContext;
+            _userContext = userContext;
+            _emailBusiness = emailBusiness;
+            _settingBusiness = settingBusiness;
         }
 
         public async Task<ReturnResult<string>> Login(UserLogin model)
@@ -256,6 +266,168 @@ namespace StudyNest.Business.v1
                 StudyNestLogger.Instance.Error(ex);
             }
 
+            return result;
+        }
+        
+        public async Task<ReturnResult<bool>> ChangePassword(UserChangePassword model)
+        {
+            var result = new ReturnResult<bool>();
+            try
+            {
+                var userId = _userContext.UserId;
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    result.Message = "User not found.";
+                    return result;
+                }
+
+                var changeResult = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+                if (!changeResult.Succeeded)
+                {
+                    result.Message = "Password change failed: " +
+                        string.Join(",", changeResult.Errors.Select(e => e.Description));
+                    return result;
+                }
+
+                result.Result = true;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message ?? ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return result;
+        }
+        
+        public async Task<ReturnResult<bool>> HasPassword()
+        {
+            var result = new ReturnResult<bool>();
+            try
+            {
+                var userId = _userContext.UserId;
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    result.Message = "User not found.";
+                    return result;
+                }
+
+                var hasPwd = await _userManager.HasPasswordAsync(user);
+                result.Result = hasPwd;
+            }
+            catch (Exception ex) 
+            {
+                result.Message = ex.Message ?? ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return result;
+        }
+        
+        public async Task<ReturnResult<bool>> SetPassword(UserSetPassword model)
+        {
+            var result = new ReturnResult<bool>();
+            try
+            {
+                var userId = _userContext.UserId;
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    result.Message = "User not found.";
+                    return result;
+                }
+
+                var hasPwd = await _userManager.HasPasswordAsync(user);
+                if (hasPwd)
+                {
+                    result.Message = "Account already has a password. Use ChangePassword endpoint instead.";
+                    return result;
+                }
+
+                var addResult = await _userManager.AddPasswordAsync(user, model.NewPassword);
+                if (!addResult.Succeeded)
+                {
+                    result.Message = "Set password failed: " +
+                        string.Join(", ", addResult.Errors.Select(e => e.Description));
+                    return result;
+                } 
+                result.Result = true;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message ?? ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return result;
+        }
+
+        public async Task<ReturnResult<bool>> RequestPasswordReset(RequestPasswordReset model)
+        {
+            var result = new ReturnResult<bool>();
+            var passwordResetUrl = (await _settingBusiness.GetOneByKeyAndGroup("PASSWORD_RESET_URL", "FRONT_END", true)).Result?.Value;
+            try
+            {
+                // Do not reveal if email exists — always return success.
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    result.Message = "No account found matching this email address. Please try again.";
+                    return result;
+                }
+                    // Generate token and build frontend reset URL
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var encodedToken = Uri.EscapeDataString(token);
+
+                                    // Frontend reset URL should be configured, e.g.
+                var frontendResetBase = passwordResetUrl ?? _configuration["Frontend:PasswordResetUrl"];
+
+                var resetLink = $"{frontendResetBase}?email={Uri.EscapeDataString(user.Email)}&token={encodedToken}";
+
+                var subject = "StudyNest — Reset your password";
+
+                var emailTemplate = (await _settingBusiness.GetOneByKeyAndGroup("FORGOT_PASSWORD_EMAIL", "EMAIL_TEMPLATE", true)).Result?.Value;
+
+                var body = emailTemplate?.Replace("{resetLink}", resetLink);
+
+                result = await _emailBusiness.SendAsync(user.Email, subject, body);
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message ?? ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return result;
+        }
+
+        public async Task<ReturnResult<bool>> ResetPassword(ResetPassword model)
+        {
+            var result = new ReturnResult<bool>();
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    result.Message = "Invalid token or email.";
+                    return result;
+                }
+
+                // token may be URL-encoded when received via query; server should expect that
+                var token = Uri.UnescapeDataString(model.Token ?? string.Empty);
+
+                var resetResult = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
+                if (!resetResult.Succeeded)
+                {
+                    result.Message = "Reset failed: " + string.Join(", ", resetResult.Errors.Select(e => e.Description));
+                    return result;
+                }
+
+                result.Result = true;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message ?? ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
+                StudyNestLogger.Instance.Error(ex);
+            }
             return result;
         }
     }

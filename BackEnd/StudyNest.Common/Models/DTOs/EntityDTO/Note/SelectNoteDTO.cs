@@ -3,6 +3,7 @@ using StudyNest.Common.Attributes;
 using StudyNest.Common.DbEntities.BaseEntity;
 using StudyNest.Common.DbEntities.Entities;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StudyNest.Common.Models.DTOs.EntityDTO.Note
 {
@@ -22,6 +23,7 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Note
         public NoteFolderSummaryDTO Folder { get; set; }
         //Mapping to Tags
         public ICollection<NoteTagRelationDTO> NoteTags { get; set; } = new List<NoteTagRelationDTO>();
+        public ICollection<NoteVersionDTO> NoteVersions { get; set; } = new List<NoteVersionDTO>();
     }
 
     // 3 types below support for select NOTE for better performance 
@@ -44,5 +46,11 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Note
     {
         [TrimmedRequired]
         public string Name { get; set; }
+    }
+    [AutoMap(typeof(DbEntities.Entities.NoteVersion), ReverseMap = true, PreserveReferences = true)]
+    public class NoteVersionDTO: BaseEntity<string>
+    {
+        public string Content { get; set; }
+        public string NoteId { get; set; }
     }
 }

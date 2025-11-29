@@ -1,3 +1,5 @@
+import { QuestionUpsertDTO } from "../question/questionUpsertDTO";
+
 export interface UpdateQuizDTO {
   id: string;
   title: string;
@@ -5,18 +7,4 @@ export interface UpdateQuizDTO {
   dateModified?: string;
   deleted?: boolean;
   questions: QuestionUpsertDTO[];
-}
-
-export interface QuestionUpsertDTO {
-  id?: string;
-  name: string;
-  type: "MCQ" | "MSQ" | "TF";
-  explanation?: string;
-  choices: ChoiceUpsertDTO[];
-}
-
-export interface ChoiceUpsertDTO {
-  id?: string;
-  text: string;
-  isCorrect: boolean;
 }

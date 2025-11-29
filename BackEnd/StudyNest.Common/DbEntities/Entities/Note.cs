@@ -30,5 +30,6 @@ namespace StudyNest.Common.DbEntities.Entities
         //Mapping to Tags
         public ICollection<NoteTag> NoteTags { get; set; } = new List<NoteTag>();
         public ICollection<Quiz> Quizzes { get; set; } = new List<Quiz>();
+        public ICollection<NoteVersion> NoteVersions { get; set; } = new List<NoteVersion>();
     }
 } 

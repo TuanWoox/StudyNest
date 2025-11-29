@@ -2,7 +2,7 @@ import { Spin } from 'antd';
 
 const SpinnerFull = () => {
     return (
-        <div className="w-full h-ful p-auto">
+        <div className="w-full h-full flex items-center justify-center">
             <Spin size="large" />
         </div>
     )

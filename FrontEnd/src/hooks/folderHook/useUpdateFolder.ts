@@ -10,11 +10,13 @@ const useUpdateFolder = () => {
     const mutation = useMutation<Folder, AxiosError, UpdateFolderDTO>({
         mutationKey: ["updateFolder"],
         mutationFn: (payload) => folderService.updateFolder(payload),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["folders"] });
-            queryClient.invalidateQueries({ queryKey: ["notes"] });
-            queryClient.invalidateQueries({ queryKey: ["tags"] });
-            toast.success("Folder successfully updated!");
+        onSuccess: (data) => {
+            if (data) {
+                queryClient.invalidateQueries({ queryKey: ["folders"] });
+                queryClient.invalidateQueries({ queryKey: ["notes"] });
+                queryClient.invalidateQueries({ queryKey: ["tags"] });
+                toast.success("Folder successfully updated!");
+            }
         },
         onError: (err) => {
             console.log("err", err);

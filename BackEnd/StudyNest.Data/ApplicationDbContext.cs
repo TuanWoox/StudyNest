@@ -28,6 +28,8 @@ namespace StudyNest.Data
         public DbSet<QuizAttemptSnapshot> QuizAttemptSnapshots { get; set; }
         public DbSet<QuizAttemptAnswer> QuizAttemptAnswers { get; set; }
         public DbSet<QuizAttemptAnswerChoice> QuizAttemptAnswerChoices { get; set; }
+        public DbSet<FeedBack> FeedBacks { get; set; } 
+        public DbSet<NoteVersion> NoteVersions { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)

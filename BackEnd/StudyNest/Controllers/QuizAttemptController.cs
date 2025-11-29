@@ -37,6 +37,20 @@ namespace StudyNest.Controllers
             }
             return Ok(result);
         }
+        [HttpPost("GetPagingByQuizId")]
+        public async Task<IActionResult> GetPagingByQuizId(Page<string> page, string quizId , bool isExported = false)
+        {
+            ReturnResult<PagedData<SelectQuizAttemptDTO, string>> result = new ReturnResult<PagedData<SelectQuizAttemptDTO, string>>();
+            try
+            {
+                result = await _quizAttemptBusiness.GetPagingByQuizId(page, quizId, isExported);
+            }
+            catch (Exception ex)
+            {
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return Ok(result);
+        }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOneById(string id)
         {
@@ -51,13 +65,13 @@ namespace StudyNest.Controllers
             }
             return Ok(result);
         }
-        [HttpPost("SubmitQuizAttempt/{quizId}")]
-        public async Task<IActionResult> SubmitQuizAttempt(string quizId,[FromBody] List<CreateQuizAttemptAnswerDTO> submittedAnswers)
+        [HttpPost("SubmitQuizAttempt/{quizAttemptSnapshotId}")]
+        public async Task<IActionResult> SubmitQuizAttempt(string quizAttemptSnapshotId, [FromBody] List<CreateQuizAttemptAnswerDTO> submittedAnswers)
         {
             ReturnResult<string> result = new ReturnResult<string>();
             try
             {
-                result = await _quizAttemptBusiness.SubmitQuizAttempt(quizId, submittedAnswers);
+                result = await _quizAttemptBusiness.SubmitQuizAttempt(quizAttemptSnapshotId, submittedAnswers);
             }
             catch (Exception ex)
             {

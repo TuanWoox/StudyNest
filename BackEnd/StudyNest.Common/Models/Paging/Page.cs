@@ -204,7 +204,6 @@ namespace StudyNest.Common.Models.Paging
                 var filterOp = item.FilterOperator?.ToString();
                 var propName = $"{mainTBL}{item.Prop.UpperFirstChar()}";
                 var value = item.Value?.ToString()?.Trim();
-
                 if (filterOp != StudyNestFilterType.EmailActions.ToString() && filterOp != "NoEmailActions")
                 {
                     if (Enum.TryParse(filterOp, out StudyNestTextFilterOperator operatorText))
@@ -214,27 +213,22 @@ namespace StudyNest.Common.Models.Paging
                             switch (operatorText)
                             {
                                 case StudyNestTextFilterOperator.Contains:
-                                    filter += $" {propName}.Contains(\"{value}\") And ";
+                                    filter += $" {propName}.ToLower().Contains(\"{value.ToLower()}\") And ";
                                     break;
-
                                 case StudyNestTextFilterOperator.DoesNotContains:
-                                    filter += $"( !{propName}.Contains(\"{value}\") || {propName} == null ) And ";
+                                    filter += $"( !{propName}.ToLower().Contains(\"{value.ToLower()}\") || {propName} == null ) And ";
                                     break;
-
                                 case StudyNestTextFilterOperator.EndsWith:
-                                    filter += $" {propName}.EndsWith(\"{value}\") And ";
+                                    filter += $" {propName}.ToLower().EndsWith(\"{value.ToLower()}\") And ";
                                     break;
-
                                 case StudyNestTextFilterOperator.IsEqualTo:
-                                    filter += $" {propName} == \"{value}\" And ";
+                                    filter += $" {propName}.ToLower() == \"{value.ToLower()}\" And ";
                                     break;
-
                                 case StudyNestTextFilterOperator.IsNotEqualTo:
-                                    filter += $" {propName} != \"{value}\" And ";
+                                    filter += $" {propName}.ToLower() != \"{value.ToLower()}\" And ";
                                     break;
-
                                 case StudyNestTextFilterOperator.StartsWith:
-                                    filter += $" {propName}.StartsWith(\"{value}\") And ";
+                                    filter += $" {propName}.ToLower().StartsWith(\"{value.ToLower()}\") And ";
                                     break;
                             }
                         }
@@ -245,10 +239,8 @@ namespace StudyNest.Common.Models.Paging
             {
                 StudyNestLogger.Instance.Error(ex);
             }
-
             return filter;
         }
-
         //This is used to filter text property on a json stored
         private void FilterStringJsonOperator<T>(ref IQueryable<T> query, FilterMapping item, string type = null)
         {

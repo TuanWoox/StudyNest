@@ -45,6 +45,7 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Tag
         public NoteFolderSummaryDTO Folder { get; set; }
         //Mapping to Tags
         public ICollection<NestedNoteTagRelationDTO> NoteTags { get; set; } = new List<NestedNoteTagRelationDTO>();
+        public ICollection<NoteVersionDTO> NoteVersions { get; set; } = new List<NoteVersionDTO>();
     }
 
     [AutoMap(typeof(NoteTag), ReverseMap = true, PreserveReferences = true)]
@@ -66,5 +67,11 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Tag
     {
         public string FolderName { get; set; }
         public string OwnerId { get; set; }
+    }
+    [AutoMap(typeof(DbEntities.Entities.NoteVersion), ReverseMap = true, PreserveReferences = true)]
+    public class NoteVersionDTO : BaseEntity<string>
+    {
+        public string Content { get; set; }
+        public string NoteId { get; set; }
     }
 }

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using StudyNest.Common.DbEntities.Entities;
 using StudyNest.Common.Interfaces;
 using StudyNest.Common.Models.DTOs.CoreDTO;
-using StudyNest.Common.Models.DTOs.EntityDTO.Questions;
+using StudyNest.Common.Models.DTOs.EntityDTO.Question;
 using StudyNest.Common.Models.DTOs.EntityDTO.Quizzes;
 using StudyNest.Common.Utils.Extensions;
 using StudyNest.Common.Utils.Helper;

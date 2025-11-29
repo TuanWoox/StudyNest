@@ -45,6 +45,7 @@ namespace StudyNest.Business.v1
                                             .Include(n => n.Folder)
                                             .Include(n => n.NoteTags)
                                                .ThenInclude(n => n.Tag)
+                                            .Include(n => n.NoteVersions)
                                             .AsNoTracking()
                                             .AsQueryable();
                 result.Result =  await _repository.GetPagingAsync<Page<string>,SelectNoteDTO>(query,page,isExported);
@@ -158,6 +159,30 @@ namespace StudyNest.Business.v1
                     return result;
                 }
 
+                //Store previous version if content is changed
+                if (EditorJsComparer.BlocksAreDifferent(existingNote.Content, newEntity.Content))
+                {
+                    var newVersion = new NoteVersion
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        NoteId = existingNote.Id,
+                        Content = existingNote.Content,
+                        DateCreated = DateTime.UtcNow
+                    };
+
+                    //Delete the oldest 20 versions
+                    var versionsToDelete = await _dbContext.NoteVersions.Where(x => x.NoteId == newEntity.Id)
+                                                                        .OrderByDescending(x => x.DateCreated)  
+                                                                        .Skip(19)                
+                                                                        .ToListAsync();
+
+                    if (versionsToDelete.Any())
+                    {
+                        _dbContext.NoteVersions.RemoveRange(versionsToDelete);
+                    }
+                    _dbContext.NoteVersions.Add(newVersion);
+                }
+
                 _mapper.Map(newEntity, existingNote);
 
                 if (string.IsNullOrEmpty(newEntity.FolderId))
@@ -191,7 +216,6 @@ namespace StudyNest.Business.v1
                 StudyNestLogger.Instance.Error(ex);
                 result.Message = ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
             }
-
             return result;
         }
         public async Task<ReturnResult<bool>> DeleteNote(string id)

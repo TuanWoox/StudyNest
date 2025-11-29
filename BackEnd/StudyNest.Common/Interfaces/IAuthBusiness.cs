@@ -14,5 +14,10 @@ namespace StudyNest.Common.Interfaces
         public Task<ReturnResult<string>> Login(UserLogin model);
         public Task<ReturnResult<string>> Register(UserRegister model);
         public Task<ReturnResult<string>> LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal);
+        public Task<ReturnResult<bool>> ChangePassword(UserChangePassword model);
+        public Task<ReturnResult<bool>> HasPassword();
+        public Task<ReturnResult<bool>> SetPassword(UserSetPassword model);
+        public Task<ReturnResult<bool>> RequestPasswordReset(RequestPasswordReset model);
+        public Task<ReturnResult<bool>> ResetPassword(ResetPassword model);
     }
 }

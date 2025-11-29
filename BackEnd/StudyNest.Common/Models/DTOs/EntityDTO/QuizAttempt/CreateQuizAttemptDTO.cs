@@ -12,6 +12,6 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.QuizAttempt
     public class CreateQuizAttemptDTO
     {
         [TrimmedRequired]
-        public string QuizId { get; set; }
+        public string QuizAttemptSnapshotId { get; set; }
     }
 }

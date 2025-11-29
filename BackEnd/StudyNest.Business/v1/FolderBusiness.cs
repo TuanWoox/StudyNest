@@ -36,6 +36,8 @@ namespace StudyNest.Business.v1
                                             .Include(x => x.Notes)
                                                 .ThenInclude(x => x.NoteTags)
                                                     .ThenInclude(x => x.Tag)
+                                             .Include(x => x.Notes)
+                                                  .ThenInclude(x => x.NoteVersions)
                                             .AsNoTracking()
                                             .AsQueryable();
                 result.Result = await _repository.GetPagingAsync<Page<string>, SelectFolderDTO>(query, page);
@@ -105,19 +107,36 @@ namespace StudyNest.Business.v1
             ReturnResult<Folder> result = new ReturnResult<Folder>();
             try
             {
-                var existingFolder = await _dbContext.Folders.Where(x => x.Id == newEntity.Id && x.OwnerId == _userContext.UserId).FirstOrDefaultAsync();
-                if(existingFolder == null)
+                var existingFolder = await _dbContext.Folders
+                    .Where(x => x.Id == newEntity.Id && x.OwnerId == _userContext.UserId)
+                    .FirstOrDefaultAsync();
+
+                if (existingFolder == null)
                 {
                     result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "folder", newEntity.Id);
                     return result;
                 }
-                else result = await _repository.UpdateAsync(newEntity);
+                else
+                {
+                    var duplicateFolder = await _dbContext.Folders
+                        .Where(x => x.OwnerId == _userContext.UserId && x.FolderName.Equals(newEntity.FolderName) && x.Id != newEntity.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (duplicateFolder != null)
+                    {
+                        result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_EXIST, "Folder name " + newEntity.FolderName);
+                        return result;
+                    }
+
+                    result = await _repository.UpdateAsync(newEntity);
+                }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 StudyNestLogger.Instance.Error(ex);
                 result.Message = ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
             }
+
             return result;
         }
         public async Task<ReturnResult<bool>> DeleteFolder(string id)
@@ -165,7 +184,6 @@ namespace StudyNest.Business.v1
 
             return result;
         }
-
         public async Task<ReturnResult<int>> DeleteFolders(List<string> ids)
         {
             var result = new ReturnResult<int>();

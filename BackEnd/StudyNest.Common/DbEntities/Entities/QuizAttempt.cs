@@ -14,9 +14,6 @@ namespace StudyNest.Common.DbEntities.Entities
     public class QuizAttempt: BaseEntity<string>
     {
         [Required]
-        public string QuizId { get; set; }
-        public Quiz Quiz { get; set; }
-        [Required]
         public string UserId { get; set; }
         [JsonIgnore]
         public ApplicationUser User { get; set; }

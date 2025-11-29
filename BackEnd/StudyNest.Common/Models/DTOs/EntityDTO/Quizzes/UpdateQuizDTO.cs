@@ -4,6 +4,7 @@ using StudyNest.Common.DbEntities.BaseEntity;
 using StudyNest.Common.DbEntities.Entities;
 using StudyNest.Common.DbEntities.Identities;
 using StudyNest.Common.Interfaces;
+using StudyNest.Common.Models.DTOs.EntityDTO.Question;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,13 +24,6 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Quizzes
         [TrimmedRequired] public string Name { get; set; } = string.Empty;
         [TrimmedRequired] public string Type { get; set; } = string.Empty;
         public string? Explanation { get; set; }
-        public List<ChoiceUpsertDTO> Choices { get; set; } = new();
-    }
-
-    public class ChoiceUpsertDTO
-    {
-        public string? Id { get; set; }
-        [TrimmedRequired] public string Text { get; set; } = string.Empty;
-        public bool IsCorrect { get; set; }
+        public List<ChoiceDTO> Choices { get; set; } = new();
     }
 }

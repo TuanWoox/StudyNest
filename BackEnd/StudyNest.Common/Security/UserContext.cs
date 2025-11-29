@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using StudyNest.Common.Interfaces;
+using StudyNest.Common.Utils.Enums;
 using StudyNest.Common.Utils.Extensions;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ namespace StudyNest.Common.Security
         public HttpUserContext(IHttpContextAccessor httpContextAccessor)
             => _httpContextAccessor = httpContextAccessor;
 
-        public string UserId => _httpContextAccessor.HttpContext?.User?.GetUserId();
+        public string UserId => _httpContextAccessor.HttpContext?.User?.GetUserId() ?? "";
+        public bool IsAdmin => _httpContextAccessor.HttpContext?.User?.IsInRole(UserRoleEnum.admin.ToString()) ?? false;
     }
 }

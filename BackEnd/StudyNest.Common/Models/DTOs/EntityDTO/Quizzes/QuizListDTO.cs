@@ -16,6 +16,7 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.Quizzes
         [Required]
         public string Title { get; set; }
         public int TotalQuestion { get; set; }
+        public string Difficulty { get; set; }
         public string? NoteTitle { get; set; }
         public void Mapping(Profile profile)
         {

@@ -4,12 +4,14 @@ export interface QuizList {
   totalQuestion: number;
   dateCreated: string;
   noteTitle: string;
+  difficulty: string;
 }
 
 export interface QuizDetail {
   id: string;
   title: string;
   createdBy: string;
+  difficulty: string;
   dateCreated: string;
   questions: Question[];
 }

@@ -154,31 +154,150 @@
 }
 
 .rotate-center {
-	-webkit-animation: rotate-center 1.2s ease-in-out infinite both;
-	        animation: rotate-center 1.2s ease-in-out infinite both;
+  -webkit-animation: rotate-center 1.2s ease-in-out infinite both;
+  animation: rotate-center 1.2s ease-in-out infinite both;
 }
 
 @-webkit-keyframes rotate-center {
   0% {
     -webkit-transform: rotate(0);
-            transform: rotate(0);
+    transform: rotate(0);
   }
+
   100% {
     -webkit-transform: rotate(360deg);
-            transform: rotate(360deg);
+    transform: rotate(360deg);
   }
 }
+
 @keyframes rotate-center {
   0% {
     -webkit-transform: rotate(0);
-            transform: rotate(0);
+    transform: rotate(0);
   }
+
   100% {
     -webkit-transform: rotate(360deg);
-            transform: rotate(360deg);
+    transform: rotate(360deg);
   }
 }
 
 .ant-collapse-header {
   align-items: center !important;
+}
+
+/* ====== StudyNest Retro Sidebar Theme ====== */
+/* Sidebar background */
+.ant-layout-sider {
+  background-color: var(--sidebar-bg) !important;
+  border-right: 1px solid color-mix(in srgb, var(--menu-text) 30%, transparent) !important;
+}
+
+/* Base text */
+.ant-menu-item,
+.ant-menu-submenu-title {
+  color: var(--menu-text) !important;
+  font-family: "IBM Plex Mono", "Courier New", monospace !important;
+  font-size: 20px !important;
+  font-weight: 550 !important;
+  padding-inline: 2 !important;
+  transition: all 0.2s ease;
+  min-height: 50px !important;
+  line-height: 50px !important;
+  /* để text/icon căn giữa */
+  padding-block: 6px !important;
+  /* tạo thêm khoảng cách trên/dưới */
+  margin-bottom: 10px !important;
+}
+
+/* Hover effect */
+.ant-menu-item:hover,
+.ant-menu-submenu-title:hover {
+  opacity: 0.85;
+  transform: translateX(2px);
+}
+
+/* Selected item */
+.ant-menu-item-selected {
+  background-color: var(--menu-active-bg) !important;
+  color: #fff !important;
+  box-shadow: var(--menu-active-shadow);
+}
+
+/* Active icon + text */
+.ant-menu-item-selected .anticon,
+.ant-menu-item-selected .ant-pro-base-menu-inline-item-text {
+  color: #fff !important;
+}
+
+/* Icon màu mặc định */
+.ant-menu-item .anticon {
+  font-size: 18px !important;
+  margin-right: 8px !important;
+  color: var(--menu-text);
+  transition: transform 0.2s ease;
+}
+
+/*  Khi sidebar bị collapse */
+/* Toàn bộ menu item trong collapse */
+.ant-menu-inline-collapsed .ant-menu-item,
+.ant-pro-base-menu-vertical-collapsed .ant-menu-item {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 0 !important;
+  margin-bottom: 12px !important;
+  height: 50px !important;
+  /* Giữ đồng bộ với min-height ở trên */
+}
+
+/* Icon căn giữa và phóng to nhẹ */
+.ant-menu-inline-collapsed .ant-menu-item .anticon,
+.ant-pro-base-menu-vertical-collapsed .ant-menu-item .anticon {
+  font-size: 22px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--menu-text) !important;
+  transition: all 0.2s ease;
+}
+
+/* Khi selected trong collapse */
+.ant-menu-inline-collapsed .ant-menu-item-selected,
+.ant-pro-base-menu-vertical-collapsed .ant-menu-item-selected {
+  background-color: var(--menu-active-bg) !important;
+  box-shadow: var(--menu-active-shadow);
+}
+
+.ant-menu-inline-collapsed .ant-menu-item-selected .anticon,
+.ant-pro-base-menu-vertical-collapsed .ant-menu-item-selected .anticon {
+  color: #fff !important;
+}
+
+/* Text “Study Nest” */
+.ant-pro-global-header-logo h1 {
+  font-family: monospace !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: var(--menu-text) !important;
+  margin: 0 !important;
+  transition: color 0.3s ease;
+  padding-left: 10px !important;
+}
+
+@layer utilities {
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
 }

@@ -27,6 +27,15 @@ export interface NoteTag {
     deleted?: boolean;
 }
 
+export interface NoteVersion {
+    id: string;
+    content: string;
+    noteId: string;
+    dateCreated?: string;
+    dateModified?: string;
+    deleted?: boolean;
+}
+
 export interface Note {
     id: string;
     title: string;
@@ -36,6 +45,7 @@ export interface Note {
     folderId?: string;
     folder?: Folder;
     noteTags: NoteTag[];
+    noteVersions: NoteVersion[];
     dateCreated?: string;
     dateModified?: string;
     deleted?: boolean;

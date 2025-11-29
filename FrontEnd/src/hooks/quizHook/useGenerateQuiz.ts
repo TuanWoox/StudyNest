@@ -18,12 +18,12 @@ export const useGenerateQuiz = (options?: UseGenerateQuizOptions) => {
     mutationKey: ["generateQuiz"],
     mutationFn: quizService.generateQuiz,
     onSuccess: ({ id }) => {
-      toast.success("Quiz successfully generated!");
+      toast.info("Quiz add to queue successfully!");
       queryClient.invalidateQueries({
         queryKey: ["quizzes"],
         refetchType: "inactive",
       });
-      if (redirectOnSuccess) navigate(`/user/quiz/${id}`);
+      if (redirectOnSuccess) navigate(`/user/quiz`);
     },
     onError: (error) => onError?.(error),
   });

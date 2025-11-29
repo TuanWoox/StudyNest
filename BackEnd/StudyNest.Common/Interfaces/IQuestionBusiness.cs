@@ -1,6 +1,6 @@
 ﻿using StudyNest.Common.DbEntities.Entities;
 using StudyNest.Common.Models.DTOs.CoreDTO;
-using StudyNest.Common.Models.DTOs.EntityDTO.Questions;
+using StudyNest.Common.Models.DTOs.EntityDTO.Question;
 using StudyNest.Common.Models.Paging;
 using System;
 using System.Collections.Generic;

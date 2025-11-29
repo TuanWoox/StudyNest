@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using StudyNest.Business.v1;
 using StudyNest.Common.Interfaces;
 using StudyNest.Common.Models.DTOs.CoreDTO;
-using StudyNest.Common.Models.DTOs.EntityDTO.Questions;
+using StudyNest.Common.Models.DTOs.EntityDTO.Question;
 using StudyNest.Common.Models.Paging;
 using StudyNest.Common.Utils.Extensions;
 

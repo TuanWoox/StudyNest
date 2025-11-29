@@ -82,11 +82,90 @@ namespace StudyNest.Controllers
             return Ok(result);
         }
 
-        [HttpGet]
+        [HttpGet("ValidateToken")]
         public IActionResult Auth()
         {
             ReturnResult<bool> result = new ReturnResult<bool>();
             result.Result = true;
+            return Ok(result);
+        }
+
+        [HttpPost("ChangePassword")]
+        public async Task<IActionResult> ChangePassword(UserChangePassword model)
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+            try
+            {
+                result = await _authBusiness.ChangePassword(model);
+            }
+            catch (Exception ex)
+            {
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return Ok(result);
+        }
+
+        [HttpGet("HasPassword")]
+        public async Task<IActionResult> HasPassword()
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+            try
+            {
+                result = await _authBusiness.HasPassword();
+            }
+            catch (Exception ex)
+            {
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return Ok(result);
+        }
+
+        [HttpPost("SetPassword")]
+        public async Task<IActionResult> SetPassword(UserSetPassword model)
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+            try
+            {
+                result = await _authBusiness.SetPassword(model);
+            }
+            catch (Exception ex)
+            {
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return Ok(result);
+        }
+
+        // Request a password reset email (public)
+        [AllowAnonymous]
+        [HttpPost("RequestPasswordReset")]
+        public async Task<IActionResult> RequestPasswordReset([FromBody] RequestPasswordReset model)
+        {
+            var result = new ReturnResult<bool>();
+            try
+            {
+                result = await _authBusiness.RequestPasswordReset(model);
+            }
+            catch (Exception ex)
+            {
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return Ok(result);
+        }
+
+        // Reset password using token from email link
+        [AllowAnonymous]
+        [HttpPost("ResetPassword")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPassword model)
+        {
+            var result = new ReturnResult<bool>();
+            try
+            {
+                result = await _authBusiness.ResetPassword(model);
+            }
+            catch (Exception ex)
+            {
+                StudyNestLogger.Instance.Error(ex);
+            }
             return Ok(result);
         }
     }

@@ -16,14 +16,14 @@ namespace StudyNest.Common.DbEntities.Entities
     {
         [Required]
         public string Title { get; set; } = string.Empty;
+        public string Difficulty { get; set; } = "medium";
         public string OwnerId { get; set; }
         [JsonIgnore]
         public ApplicationUser Owner { get; set; }
-        public string NoteId { get; set; }
-        public Note Note { get; set; }
+        public string? NoteId { get; set; }
+        public Note? Note { get; set; }
         public bool IsBeingConvertToSnapShot { get; set; } = false;
         public ICollection<Question> Questions { get; set; } = new List<Question>();
-        public ICollection<QuizAttempt> QuizAttempts { get; set; } = new List<QuizAttempt>();
-
+        public ICollection<QuizAttemptSnapshot> QuizAttemptSnapshots { get; set; } = new List<QuizAttemptSnapshot>();
     }
 }

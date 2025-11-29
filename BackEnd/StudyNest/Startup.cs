@@ -107,6 +107,7 @@ namespace StudyNest
             {
                 endpoints.MapControllers();
                 endpoints.MapHub<Business.Hubs.QuizAttemptSnapshotHub>("/hub/quiz-attempt-snapshot");
+                endpoints.MapHub<Business.Hubs.QuizCreateHub>("/hub/quiz-create");
             });
 
 
@@ -267,6 +268,12 @@ namespace StudyNest
             .AddRoleManager<RoleManager<ApplicationRole>>()
             .AddSignInManager<SignInManager<ApplicationUser>>()
             .AddDefaultTokenProviders();
+
+            // Configure password-reset token lifespan to 5 minutes
+            services.Configure<DataProtectionTokenProviderOptions>(opts =>
+            {
+                opts.TokenLifespan = TimeSpan.FromMinutes(5);
+            });
 
             services.AddSignalR(hubOptions =>
             {

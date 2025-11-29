@@ -2,6 +2,7 @@ import instance from "@/config/axiosConfig";
 import { Page } from "@/types/common/page";
 import { PagedData } from "@/types/common/paged-data";
 import { ReturnResult } from "@/types/common/return-result";
+import { CreateManualQuizDTO } from "@/types/quiz/createManualQuizDTO";
 import { CreateQuizDTO } from "@/types/quiz/createQuizDTO";
 import { QuizDetail, QuizList } from "@/types/quiz/quiz";
 import { UpdateQuizDTO } from "@/types/quiz/updateQuizDTO";
@@ -32,6 +33,13 @@ const quizService = {
     >("/Quiz/GetPaging", payload);
     return data.result;
   },
+  createManualQuiz: async (payload: CreateManualQuizDTO): Promise<string> => {
+    const {data} = await instance.post<ReturnResult<string>>(
+      "/Quiz/manual", payload
+    )
+
+    return data.result;
+  },
   updateQuiz: async (payload: UpdateQuizDTO): Promise<boolean> => {
     const { data } = await instance.put<ReturnResult<boolean>>(
       "/Quiz",
@@ -46,6 +54,12 @@ const quizService = {
     );
     return data.result === true;
   },
+  validateNoteLength: async (nodeId: string): Promise<boolean> => {
+    const { data } = await instance.get<ReturnResult<boolean>>(
+      `/Quiz/validate-note-length?noteId=${nodeId}`
+    );
+    return data.result === true;
+  }
 };
 
 export default quizService;

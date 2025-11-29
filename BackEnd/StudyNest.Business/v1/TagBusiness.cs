@@ -55,6 +55,9 @@ namespace StudyNest.Business.v1
                                         .ThenInclude(nt => nt.Note)
                                             .ThenInclude(n => n.NoteTags)
                                                 .ThenInclude(nt => nt.Tag)
+                                    .Include(t => t.NoteTags.Where(t => t.Note.OwnerId == _userContext.UserId))
+                                        .ThenInclude(nt => nt.Note)
+                                            .ThenInclude(nt => nt.NoteVersions)
                                     .Where(t => t.NoteTags.Any(nt => nt.Note.OwnerId == _userContext.UserId))
                                     .AsQueryable();
 
