@@ -86,14 +86,11 @@ namespace StudyNest.Business.v1
                     var fetchedQuiz = await _context.Quizzes.IgnoreQueryFilters().Where(x => x.Id == quizId).FirstOrDefaultAsync();
                     if(fetchedQuiz != null)
                     {
-                        if(fetchedQuiz.IsBeingConvertToSnapShot)
+                        if(!fetchedQuiz.IsBeingConvertToSnapShot)
                         {
-                            return result;
+                            BackgroundJob.Enqueue<IQuizAttemptSnapshotBusiness>(x => x.CreateSnapShot(quizId));
                         }
-                        else
-                        {
-                            _ = await CreateSnapShot(fetchedQuiz.Id);
-                        }
+                        return result;
                     }
                     else
                     {
@@ -153,7 +150,7 @@ namespace StudyNest.Business.v1
             }
             return result;
         }
-        private async Task<ReturnResult<bool>> CompareQuizSnapShotContentForCreatingNewOne(QuizAttemptSnapshot existingSnapshot,string quizId)
+        public async Task<ReturnResult<bool>> CompareQuizSnapShotContentForCreatingNewOne(QuizAttemptSnapshot existingSnapshot,string quizId)
         {
             ReturnResult<bool> result = new ReturnResult<bool>();
 

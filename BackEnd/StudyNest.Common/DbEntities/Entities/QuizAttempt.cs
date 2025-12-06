@@ -20,6 +20,8 @@ namespace StudyNest.Common.DbEntities.Entities
         [Required]
         public string QuizAttemptSnapshotId { get; set; }
         public QuizAttemptSnapshot  QuizAttemptSnapshot { get; set; }
+        public string? QuizSessionId { get; set; }
+        public QuizSession? QuizSession { get; set; }
         public int Score { get; set; }
         public ICollection<QuizAttemptAnswer> QuizAttemptAnswers { get; set; } = new List<QuizAttemptAnswer>();
     }

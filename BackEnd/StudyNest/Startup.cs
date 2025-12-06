@@ -61,8 +61,8 @@ namespace StudyNest
             });
 
             services.AddHangfireSetup(Configuration);
-            services.AddSignalR();
             HangfireConfiguration.ConfigureGlobalFilters();
+            services.AddSignalR();
 
             AddCorsDomain(services);
             AddControllerWithNewtonsoftJson(services);
@@ -99,6 +99,7 @@ namespace StudyNest
             app.UseCors("CorsPolicy");
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseWebSockets();
 
             app.UseEndpoints(endpoints =>
@@ -106,6 +107,7 @@ namespace StudyNest
                 endpoints.MapControllers();
                 endpoints.MapHub<Business.Hubs.QuizAttemptSnapshotHub>("/hub/quiz-attempt-snapshot");
                 endpoints.MapHub<Business.Hubs.QuizCreateHub>("/hub/quiz-create");
+                endpoints.MapHub<Business.Hubs.QuizSessionHub>("/hub/quiz-session");
             });
 
 

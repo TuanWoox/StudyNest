@@ -20,5 +20,6 @@ namespace StudyNest.Common.DbEntities.Entities
         [Column(TypeName = "jsonb")]
         public string QuizQuestions { get; set; }
         public ICollection<QuizAttempt> QuizAttempts { get; set; } = new List<QuizAttempt>();
+        public ICollection<QuizSession> QuizSessions { get; set; } = new List<QuizSession>();
     }
 }

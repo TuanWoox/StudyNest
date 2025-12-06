@@ -13,5 +13,6 @@ namespace StudyNest.Common.Interfaces
     {
         public Task<ReturnResult<QuizAttemptSnapshotDTO>> GetOneByIdForAttempting(string quizId);
         public Task<ReturnResult<QuizAttemptSnapshot>> CreateSnapShot(string quizId);
+        public Task<ReturnResult<bool>> CompareQuizSnapShotContentForCreatingNewOne(QuizAttemptSnapshot existingSnapshot, string quizId);
     }
 }

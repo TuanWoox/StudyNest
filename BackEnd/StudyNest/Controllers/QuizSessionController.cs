@@ -1,0 +1,36 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using StudyNest.Common.Interfaces;
+using StudyNest.Common.Models.DTOs.CoreDTO;
+using StudyNest.Common.Models.DTOs.EntityDTO.QuizSession;
+using StudyNest.Common.Utils.Extensions;
+
+namespace StudyNest.Controllers
+{
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiController]
+    [Authorize]
+    public class QuizSessionController : ControllerBase
+    {
+        IQuizSessionBusiness _quizSessionBusiness;
+        public QuizSessionController(IQuizSessionBusiness quizSessionBusiness)
+        {
+            this._quizSessionBusiness = quizSessionBusiness;
+        }
+        [HttpPost]
+        public async Task<IActionResult> CreateQuizSession(CreateQuizSessionDTO newEntity)
+        {
+            ReturnResult<QuizSessionDTO> result = new ReturnResult<QuizSessionDTO>();
+            try
+            {
+                result = await _quizSessionBusiness.CreateQuizSession(newEntity);
+            }
+            catch (Exception ex)
+            {
+               StudyNestLogger.Instance.Error(ex.Message);
+            }
+            return Ok(result);
+        }
+    }
+}
