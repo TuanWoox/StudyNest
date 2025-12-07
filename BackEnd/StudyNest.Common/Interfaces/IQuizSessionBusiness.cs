@@ -1,4 +1,5 @@
 ﻿using StudyNest.Common.Models.DTOs.CoreDTO;
+using StudyNest.Common.Models.DTOs.EntityDTO.QuizAttemptSnapshot;
 using StudyNest.Common.Models.DTOs.EntityDTO.QuizSession;
 using System;
 using System.Collections.Generic;
@@ -16,5 +17,7 @@ namespace StudyNest.Common.Interfaces
         public Task<ReturnResult<bool>> JoinQuizSession(JoinQuizSessionDTO joinQuizSessionDTO);
         public Task<ReturnResult<bool>> StartQuiz(string quizSessionId);
         public Task<ReturnResult<string>> GetQuizIdByQuizSessionId(string quizSessionId);
+        public Task<ReturnResult<bool>> MoveToNextIndex(string quizSessionId);
+        public Task<ReturnResult<bool>> TriggerSubmitAnswer(string quizSessionId, QuizAttemptSnapshotDTO snapshot);
     }
 }

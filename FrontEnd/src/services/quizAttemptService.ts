@@ -4,6 +4,7 @@ import { PagedData } from "@/types/common/paged-data";
 import { ReturnResult } from "@/types/common/return-result";
 import { QuizAttemptDTO } from "@/types/quizAttempt/quizAttemptDTO";
 import { CreateQuizAttemptAnswerDTO } from "@/types/quizAttemptAnswer/createQuizAttemptAnswerDTO";
+import { QuizAttemptAnswerDTO } from "@/types/quizAttemptAnswer/quizAttemptAnswerDTO";
 import { selectQuizAttemptDTO } from "@/types/quizAttemptAnswer/selectQuizAttemptDTO";
 
 const quizAttemptService = {
@@ -22,10 +23,14 @@ const quizAttemptService = {
         payload: Page<string>, quizId: string
     ): Promise<PagedData<selectQuizAttemptDTO, string>> => {
         const { data } = await instance.post<
-        ReturnResult<PagedData<selectQuizAttemptDTO, string>>
+            ReturnResult<PagedData<selectQuizAttemptDTO, string>>
         >(`/QuizAttempt/GetPagingByQuizId?quizId=${quizId}`, payload);
         return data.result;
     },
+    submitQuizAnswerForQuizSession: async (submittedAnswers: CreateQuizAttemptAnswerDTO) => {
+        const { data } = await instance.post<ReturnResult<QuizAttemptAnswerDTO>>(`/QuizAttempt/SubmitQuizAnswerForQuizSession/`, submittedAnswers)
+        return data.result;
+    }
 }
 
 export default quizAttemptService;

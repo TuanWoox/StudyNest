@@ -29,4 +29,8 @@
     <ProjectReference Include="..\StudyNest.Data\StudyNest.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\" />
+  </ItemGroup>
+
 </Project>

@@ -228,7 +228,7 @@ namespace StudyNest.Business.v1
             }
             return result;
         }
-        public async Task<ReturnResult<List<QuizAttemptDTO>>> CreateQuizAttemptForQuizSession(List<string> userIds, string QuizAttemptSnapshotId)
+        public async Task<ReturnResult<List<QuizAttemptDTO>>> CreateQuizAttemptForQuizSession(List<string> userIds, string QuizAttemptSnapshotId, string quizSessionId)
         {
             ReturnResult<List<QuizAttemptDTO>> result = new ReturnResult<List<QuizAttemptDTO>>();
             try
@@ -241,11 +241,10 @@ namespace StudyNest.Business.v1
                 }
 
                 // Find the snapshot for this quiz session
-                var snapshot = await _dbContext.QuizAttemptSnapshots
-                    .Where(x => x.Id == QuizAttemptSnapshotId)
-                    .Include(x => x.Quiz)
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync();
+                var snapshot = await _dbContext.QuizAttemptSnapshots.Where(x => x.Id == QuizAttemptSnapshotId)
+                                                .Include(x => x.Quiz)
+                                                .AsNoTracking()
+                                                .FirstOrDefaultAsync();
 
                 if (snapshot == null)
                 {
@@ -272,6 +271,7 @@ namespace StudyNest.Business.v1
                     {
                         UserId = userId,
                         QuizAttemptSnapshotId = snapshot.Id.ToString(),
+                        QuizSessionId = quizSessionId.Trim(),
                         Score = 0 // Initialize score to 0 for quiz session
                     });
                 }
@@ -286,6 +286,39 @@ namespace StudyNest.Business.v1
                 else
                 {
                     result.Message = "Failed to create quiz attempts for the session.";
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message ?? ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return result;
+        }
+        public async Task<ReturnResult<QuizAttemptAnswerDTO>> CreateOneAnswerForQuizSession(CreateQuizAttemptAnswerDTO submittedAnswer)
+        {
+            ReturnResult<QuizAttemptAnswerDTO> result = new ReturnResult<QuizAttemptAnswerDTO>();
+            try
+            {
+                var existingAttempt = await _dbContext.QuizAttempts
+                                                .Where(x => x.Id == submittedAnswer.QuizAttemptId
+                                                        && x.QuizSessionId != null)
+                                                .Include(x => x.QuizAttemptSnapshot)
+                                                .FirstOrDefaultAsync();
+                if (existingAttempt != null)
+                {
+                    if(existingAttempt.QuizAttemptSnapshot != null)
+                    {
+                        result = await _quizAttemptAnswerBusiness.CreateQuizAttemptAnswerForQuizSession(existingAttempt.Id, submittedAnswer);
+                    }
+                    else
+                    {
+                        result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz attempt snapshot", existingAttempt.QuizAttemptSnapshotId);
+                    }
+                }
+                else
+                {
+                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz attempt", submittedAnswer.QuizAttemptId);
                 }
             }
             catch (Exception ex)

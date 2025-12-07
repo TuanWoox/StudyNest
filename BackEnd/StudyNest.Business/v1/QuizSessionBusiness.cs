@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using StudyNest.Common.DbEntities.Entities;
 using StudyNest.Common.Interfaces;
 using StudyNest.Common.Models.DTOs.CoreDTO;
+using StudyNest.Common.Models.DTOs.EntityDTO.QuizAttemptSnapshot;
 using StudyNest.Common.Models.DTOs.EntityDTO.QuizSession;
 using StudyNest.Common.Utils.Enums;
 using StudyNest.Common.Utils.Extensions;
@@ -245,6 +246,69 @@ namespace StudyNest.Business.v1
                 }
             }
             catch(Exception ex)
+            {
+                result.Message = ex.Message;
+                StudyNestLogger.Instance.Error(ex.Message);
+            }
+            return result;
+        }
+        public async Task<ReturnResult<bool>> MoveToNextIndex(string quizSessionId)
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+            try
+            {
+                var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == quizSessionId.Trim() 
+                                                                        && x.Status == QuizSessionStatus.InProgress).
+                                                                        FirstOrDefaultAsync();
+                if(existingQuizSession != null)
+                {
+                    existingQuizSession.CurrentQuestionIndex = existingQuizSession.CurrentQuestionIndex + 1;
+                    _dbContext.Update(existingQuizSession);
+                    if(await _dbContext.SaveChangesAsync() > 0)
+                    {
+                        result.Result = true;
+                    }
+                    else
+                    {
+                        result.Message = "Cannot save try again";
+                    }
+                }
+                else
+                {
+                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", quizSessionId);
+                }
+            }
+            catch(Exception ex)
+            {
+                result.Message = ex.Message;
+                StudyNestLogger.Instance.Error(ex.Message);
+            }
+            return result;
+        }
+        public async Task<ReturnResult<bool>> TriggerSubmitAnswer(string quizSessionId, QuizAttemptSnapshotDTO snapshot)
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+            try
+            {
+                var quizSessionResult = await GetQuizSessionById(quizSessionId);
+                if (quizSessionResult.Result != null)
+                {
+                    //Notify all user to submit the answer
+                    await _sessionHub.Clients.Groups(quizSessionId).SubmitAnswer();
+                    //We delay so that user can see the answer result before moving to next question
+                    await Task.Delay(5000);
+                    if (quizSessionResult.Result.CurrentQuestionIndex + 1 < snapshot.QuizQuestionsParsed?.Count())
+                    {
+                        var updatedIndexResult = await MoveToNextIndex(quizSessionId);
+                        if (updatedIndexResult.Result)
+                        {
+                            await _sessionHub.Clients.Groups(quizSessionId).MoveToNextQuestion();
+                            BackgroundJob.Schedule<IQuizSessionBusiness>(x => x.TriggerSubmitAnswer(quizSessionId, snapshot), TimeSpan.FromSeconds(quizSessionResult.Result.TimeForEachQuestion));
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
             {
                 result.Message = ex.Message;
                 StudyNestLogger.Instance.Error(ex.Message);

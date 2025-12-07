@@ -38,7 +38,7 @@ namespace StudyNest.Business.v1
             this._userContext = userContext;
             this._snapshotHub = snapshotHub;
         }
-        public async Task<ReturnResult<QuizAttemptSnapshotDTO>> GetOneByIdForAttempting(string quizId)
+        public async Task<ReturnResult<QuizAttemptSnapshotDTO>> GetOneByIdForAttempting(string quizId, bool? keepIsCorrect = false)
         {
             ReturnResult<QuizAttemptSnapshotDTO> result = new ReturnResult<QuizAttemptSnapshotDTO>();
             try
@@ -62,9 +62,12 @@ namespace StudyNest.Business.v1
                         //Remove the IsCorrect property from the choices to prevent cheating
                         foreach (var question in mappedResult.QuizQuestionsParsed.Where(q => q.Choices != null && q.Choices.Count > 0))
                         {
-                            foreach (var choice in question.Choices)
+                            if(keepIsCorrect == false)
                             {
-                                choice.IsCorrect = false;
+                                foreach (var choice in question.Choices)
+                                {
+                                    choice.IsCorrect = false;
+                                }
                             }
                         }
                         //After that set quiz questions to "" for cleaner result

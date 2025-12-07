@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Hangfire;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using StudyNest.Business.v1;
 using StudyNest.Common.DbEntities.Entities;
 using StudyNest.Common.Interfaces;
 using StudyNest.Common.Models.DTOs.CoreDTO;
+using StudyNest.Common.Models.DTOs.EntityDTO.QuizAttemptSnapshot;
 using StudyNest.Common.Models.DTOs.EntityDTO.QuizSession;
 using StudyNest.Common.Utils.Extensions;
 
@@ -16,6 +18,8 @@ namespace StudyNest.Business.Hubs
         Task QuizHasBeenStarted(object dataSendBack);
         Task QuizToggleLoadingPrepare(object dataSendBack);
         Task SendQuizAttempt(object dataSendback);
+        Task SubmitAnswer();
+        Task MoveToNextQuestion();
     }
 
     public class PlayerInformation
@@ -212,7 +216,6 @@ namespace StudyNest.Business.Hubs
 
             return result;
         }
-
         public async Task<ReturnResult<bool>> StartQuiz(string quizSessionId)
         {
             ReturnResult<bool> result = new ReturnResult<bool>();
@@ -242,18 +245,20 @@ namespace StudyNest.Business.Hubs
                 // Call the business logic to start the quiz
                 var startResult = await _quizSessionBusiness.StartQuiz(quizSessionId);
                 var quizIdResult = await _quizSessionBusiness.GetQuizIdByQuizSessionId(quizSessionId);
+                var quizSessionResult = await _quizSessionBusiness.GetQuizSessionById(quizSessionId);
 
                 if (startResult.Result && !string.IsNullOrEmpty(quizIdResult.Result))
                 {
-                    // Get the quiz attempt snapshot for this quiz
-                    var quizAttemptSnapshotResult = await _quizAttemptSnapshotBusiness.GetOneByIdForAttempting(quizIdResult.Result);
+                    // Get the quiz attempt snapshot for this quiz, and we will returning even the is correct
+                    var quizAttemptSnapshotResult = await _quizAttemptSnapshotBusiness.GetOneByIdForAttempting(quizIdResult.Result, true);
                     
                     if (quizAttemptSnapshotResult.Result != null)
                     {
                         // Create quiz attempts for all players in the session
                         var quizAttemptCreatedResult = await _quizAttemptBusiness.CreateQuizAttemptForQuizSession(
                             players.Select(x => x.UserId).ToList(), 
-                            quizAttemptSnapshotResult.Result.Id
+                            quizAttemptSnapshotResult.Result.Id,
+                            quizSessionId
                         );
 
                         // Send individual quiz attempt to each player
@@ -261,8 +266,7 @@ namespace StudyNest.Business.Hubs
                         {
                             await Clients.User(player.UserId).SendQuizAttempt(new
                             {
-                                quizAttempt = quizAttemptCreatedResult.Result
-                                    .FirstOrDefault(x => x.UserId == player.UserId)
+                                quizAttempt = quizAttemptCreatedResult.Result.FirstOrDefault(x => x.UserId == player.UserId)
                             });
                         }
 
@@ -271,6 +275,7 @@ namespace StudyNest.Business.Hubs
                         {
                             quizAttemptSnapshot = quizAttemptSnapshotResult.Result
                         });
+                        BackgroundJob.Schedule<IQuizSessionBusiness>(x => x.TriggerSubmitAnswer(quizSessionId, quizAttemptSnapshotResult.Result), TimeSpan.FromSeconds(quizSessionResult.Result.TimeForEachQuestion));
                     }
                     else
                     {
@@ -282,31 +287,19 @@ namespace StudyNest.Business.Hubs
                     result.Message = startResult.Message ?? "Failed to start quiz.";
                 }
 
-                // Hide loading state from all players
-                await Clients.Group(quizSessionId).QuizToggleLoadingPrepare(new
-                {
-                    loading = false
-                });
             }
             catch (Exception ex)
             {
                 result.Message = ex.Message;
                 StudyNestLogger.Instance.Error(ex.Message);
-                
-                // Ensure loading state is hidden even on error
-                try
-                {
-                    await Clients.Group(quizSessionId).QuizToggleLoadingPrepare(new
-                    {
-                        loading = false
-                    });
-                }
-                catch
-                {
-                    // Suppress any errors from hiding the loading state
-                }
             }
+            await Clients.Group(quizSessionId).QuizToggleLoadingPrepare(new
+            {
+                loading = false
+            });
+
             return result;
         }
+        
     }
 }

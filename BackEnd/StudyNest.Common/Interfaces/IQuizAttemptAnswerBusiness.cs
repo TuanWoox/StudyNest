@@ -11,5 +11,6 @@ namespace StudyNest.Common.Interfaces
     public interface IQuizAttemptAnswerBusiness
     {
         public Task<ReturnResult<bool>> CreateQuizAttemptAnswer(string quizAttemptId, List<CreateQuizAttemptAnswerDTO> newEntity);
+        public Task<ReturnResult<QuizAttemptAnswerDTO>> CreateQuizAttemptAnswerForQuizSession(string quizAttemptId, CreateQuizAttemptAnswerDTO newEntity);
     }
 }

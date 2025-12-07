@@ -3,12 +3,15 @@ import themeReducer from "./themeSlice";
 import quizAttemptReducer from "./quizAttemptSlice";
 import authReducer from "./authSlice";
 import quizJobReducer from "./quizJobSlice";
+import quizSessionAttemptReducer from "./quizSessionAtemptSlice";
+
 export const store = configureStore({
   reducer: {
     theme: themeReducer,
     quizAttempt: quizAttemptReducer,
     authReducer: authReducer,
     quizJob: quizJobReducer,
+    quizSessionAttempt: quizSessionAttemptReducer,
   },
 });
 

@@ -79,5 +79,19 @@ namespace StudyNest.Controllers
             }
             return Ok(result);
         }
+        [HttpPost("SubmitQuizAnswerForQuizSession")]
+        public async Task<IActionResult> SubmitQuizAnswerForQuizSession([FromBody] CreateQuizAttemptAnswerDTO submittedAnswer)
+        {
+            ReturnResult<QuizAttemptAnswerDTO> result = new ReturnResult<QuizAttemptAnswerDTO>();
+            try
+            {
+                result = await _quizAttemptBusiness.CreateOneAnswerForQuizSession(submittedAnswer);
+            }
+            catch (Exception ex)
+            {
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return Ok(result);
+        }
     }
 }

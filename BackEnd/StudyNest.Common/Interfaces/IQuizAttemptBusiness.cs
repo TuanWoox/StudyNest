@@ -19,6 +19,7 @@ namespace StudyNest.Common.Interfaces
         public Task<ReturnResult<QuizAttemptDTO>> GetOneById(string id);
         public Task<ReturnResult<string>> SubmitQuizAttempt(string quizAttemptSnapshotId, List<CreateQuizAttemptAnswerDTO> submittedAnswers);
         public Task<ReturnResult<QuizAttemptDTO>> CreateQuizAttempt(CreateQuizAttemptDTO newEntity);
-        public Task<ReturnResult<List<QuizAttemptDTO>>> CreateQuizAttemptForQuizSession(List<string> userIds, string QuizAttemptSnapshotId);
+        public Task<ReturnResult<List<QuizAttemptDTO>>> CreateQuizAttemptForQuizSession(List<string> userIds, string QuizAttemptSnapshotId, string quizSessionId);
+        public Task<ReturnResult<QuizAttemptAnswerDTO>> CreateOneAnswerForQuizSession(CreateQuizAttemptAnswerDTO submittedAnswer);
     }
 }
