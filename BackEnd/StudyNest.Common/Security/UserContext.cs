@@ -5,6 +5,7 @@ using StudyNest.Common.Utils.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,5 +19,8 @@ namespace StudyNest.Common.Security
 
         public string UserId => _httpContextAccessor.HttpContext?.User?.GetUserId() ?? "";
         public bool IsAdmin => _httpContextAccessor.HttpContext?.User?.IsInRole(UserRoleEnum.admin.ToString()) ?? false;
+        public string UserName => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value ?? "";
+
+        public string Email => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value ?? "";
     }
 }

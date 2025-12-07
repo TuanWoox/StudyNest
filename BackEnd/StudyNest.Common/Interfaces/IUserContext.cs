@@ -10,5 +10,7 @@ namespace StudyNest.Common.Interfaces
     {
         string UserId { get; }
         bool IsAdmin { get; }
+        string UserName { get; }
+        string Email { get; }
     }
 }

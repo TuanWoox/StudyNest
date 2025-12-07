@@ -12,7 +12,7 @@ using StudyNest.Data;
 namespace StudyNest.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251206170227_AddQuizSession")]
+    [Migration("20251207024033_AddQuizSession")]
     partial class AddQuizSession
     {
         /// <inheritdoc />
@@ -707,6 +707,10 @@ namespace StudyNest.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("QuizAttemptSnapshotId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -720,6 +724,8 @@ namespace StudyNest.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Deleted");
+
+                    b.HasIndex("OwnerId");
 
                     b.HasIndex("QuizAttemptSnapshotId");
 
@@ -1293,11 +1299,19 @@ namespace StudyNest.Migrations
 
             modelBuilder.Entity("StudyNest.Common.DbEntities.Entities.QuizSession", b =>
                 {
+                    b.HasOne("StudyNest.Common.DbEntities.Identities.ApplicationUser", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("StudyNest.Common.DbEntities.Entities.QuizAttemptSnapshot", "QuizAttemptSnapshot")
                         .WithMany("QuizSessions")
                         .HasForeignKey("QuizAttemptSnapshotId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Owner");
 
                     b.Navigation("QuizAttemptSnapshot");
                 });

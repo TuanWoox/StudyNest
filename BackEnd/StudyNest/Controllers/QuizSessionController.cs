@@ -32,5 +32,19 @@ namespace StudyNest.Controllers
             }
             return Ok(result);
         }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetQuizSessionById(string id)
+        {
+            ReturnResult<QuizSessionDTO> result = new ReturnResult<QuizSessionDTO>();
+            try
+            {
+                result = await _quizSessionBusiness.GetQuizSessionById(id);
+            }
+            catch(Exception ex)
+            {
+                StudyNestLogger.Instance.Error(ex.Message);
+            }
+            return Ok(result);
+        }
     }
 }

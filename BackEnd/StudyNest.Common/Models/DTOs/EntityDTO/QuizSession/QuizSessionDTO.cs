@@ -23,6 +23,7 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.QuizSession
         [Range(20, 30)]
         public int TimeForEachQuestion { get; set; } = 0; // in seconds
         public DateTimeOffset? DateTimeEnded { get; set; }
+        public string OwnerId { get; set; }
         public string QuizAttemptSnapshotId { get; set; }
         public ICollection<DbEntities.Entities.QuizAttempt> QuizAttempts { get; set; } = new List<DbEntities.Entities.QuizAttempt>();
     }

@@ -29,6 +29,7 @@ import { NotFoundPage } from "./components/NotFoundPage/NotFoundPage";
 import SettingsConfig from "./features/admin/settings/SettingsConfig";
 import AdminFeedBacks from "./features/admin/feedbacks/Feedbacks/FeedBacks";
 import QuizzesExplore from "./features/user/quizzes/QuizzesExplore/QuizzesExplore";
+import QuizSessionPlay from "./features/user/quizSessions/QuizSessionPLay/QuizSessionPlay";
 
 export const router = createBrowserRouter([
   {
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
       { path: "quiz/history/:id", element: <QuizHistory /> },
       { path: "quiz/quizAttempt/:id", element: <QuizView /> },
       { path: "quiz/quizAttemptResult/:id", element: <QuizResultView /> },
+      { path: "quizSession/play/:sessionId", element: <QuizSessionPlay /> },
       { path: "feedbacks", element: <Feedbacks /> },
       { path: "change-password", element: <ChangePassword /> },
     ],

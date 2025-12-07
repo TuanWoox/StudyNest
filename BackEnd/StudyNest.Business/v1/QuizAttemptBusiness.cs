@@ -228,5 +228,72 @@ namespace StudyNest.Business.v1
             }
             return result;
         }
+        public async Task<ReturnResult<List<QuizAttemptDTO>>> CreateQuizAttemptForQuizSession(List<string> userIds, string QuizAttemptSnapshotId)
+        {
+            ReturnResult<List<QuizAttemptDTO>> result = new ReturnResult<List<QuizAttemptDTO>>();
+            try
+            {
+                // Validate input
+                if (userIds == null || !userIds.Any())
+                {
+                    result.Message = "User list cannot be empty.";
+                    return result;
+                }
+
+                // Find the snapshot for this quiz session
+                var snapshot = await _dbContext.QuizAttemptSnapshots
+                    .Where(x => x.Id == QuizAttemptSnapshotId)
+                    .Include(x => x.Quiz)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync();
+
+                if (snapshot == null)
+                {
+                    result.Message = string.Format(
+                        ResponseMessage.MESSAGE_ITEM_NOT_FOUND,
+                        "quiz attempt snapshot",
+                        QuizAttemptSnapshotId
+                    );
+                    return result;
+                }
+
+                if (snapshot.Quiz == null)
+                {
+                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz", snapshot.QuizId);
+                    return result;
+                }
+
+                // Create quiz attempts for all users in the session
+                var quizAttemptsToCreate = new List<QuizAttempt>();
+
+                foreach (var userId in userIds)
+                {
+                    quizAttemptsToCreate.Add(new QuizAttempt
+                    {
+                        UserId = userId,
+                        QuizAttemptSnapshotId = snapshot.Id.ToString(),
+                        Score = 0 // Initialize score to 0 for quiz session
+                    });
+                }
+
+                // Bulk insert all quiz attempts
+                await _dbContext.QuizAttempts.AddRangeAsync(quizAttemptsToCreate);
+
+                if (await _dbContext.SaveChangesAsync() > 0)
+                {
+                    result.Result = _mapper.Map<List<QuizAttemptDTO>>(quizAttemptsToCreate);
+                }
+                else
+                {
+                    result.Message = "Failed to create quiz attempts for the session.";
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message ?? ResponseMessage.MESSAGE_TECHNICAL_ISSUE;
+                StudyNestLogger.Instance.Error(ex);
+            }
+            return result;
+        }
     }
 }

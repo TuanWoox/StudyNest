@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using CloudinaryDotNet.Actions;
 using Hangfire;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -7,14 +6,10 @@ using StudyNest.Common.DbEntities.Entities;
 using StudyNest.Common.Interfaces;
 using StudyNest.Common.Models.DTOs.CoreDTO;
 using StudyNest.Common.Models.DTOs.EntityDTO.QuizSession;
+using StudyNest.Common.Utils.Enums;
 using StudyNest.Common.Utils.Extensions;
 using StudyNest.Common.Utils.Helper;
 using StudyNest.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StudyNest.Business.v1
 {
@@ -38,6 +33,7 @@ namespace StudyNest.Business.v1
             this._mapper = mapper;
             this._sessionHub = sessionHub;
         }
+
         public async Task<ReturnResult<QuizSessionDTO>> CreateQuizSession(CreateQuizSessionDTO newEntity)
         {
             ReturnResult<QuizSessionDTO> result = new ReturnResult<QuizSessionDTO>();
@@ -78,7 +74,8 @@ namespace StudyNest.Business.v1
                 {
                     GamePin = newEntity.GamePin,
                     TimeForEachQuestion = newEntity.TimeForEachQuestion,
-                    QuizAttemptSnapshotId = existingSnapshot!.Id
+                    QuizAttemptSnapshotId = existingSnapshot!.Id,
+                    OwnerId = _userContext.UserId,
                 };
                 _dbContext.Add(newQuizSession);
                 if (await _dbContext.SaveChangesAsync() > 0)
@@ -152,10 +149,11 @@ namespace StudyNest.Business.v1
             ReturnResult<bool> result = new ReturnResult<bool>();
             try
             {
-                var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == joinQuizSessionDTO.Id 
-                                                                         && x.GamePin == joinQuizSessionDTO.GamePin)
-                                                                        .AsNoTracking()
+                // If it is the owner, no need to check game pin otherwise need to match
+                var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == joinQuizSessionDTO.Id &&
+                                                                        (x.GamePin == joinQuizSessionDTO.GamePin || x.OwnerId == _userContext.UserId))
                                                                         .FirstOrDefaultAsync();
+
                 if (existingQuizSession == null)
                 {
                     result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", joinQuizSessionDTO.Id);
@@ -167,6 +165,84 @@ namespace StudyNest.Business.v1
                     return result;
                 }
                 result.Result = true;
+            }
+            catch(Exception ex)
+            {
+                result.Message = ex.Message;
+                StudyNestLogger.Instance.Error(ex.Message);
+            }
+            return result;
+        }
+        public async Task<ReturnResult<QuizSessionDTO>> GetQuizSessionById(string id)
+        {
+            ReturnResult<QuizSessionDTO> result = new ReturnResult<QuizSessionDTO>();
+            try
+            {
+                var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == id.Trim())
+                                                                        .FirstOrDefaultAsync();
+                if(existingQuizSession != null)
+                {
+                    result.Result = _mapper.Map<QuizSessionDTO>(existingQuizSession);
+                }
+                else
+                {
+                    result.Message = String.Format(ResponseMessage.MESSAGE_ALL_ITEM_NOT_FOUND, "quiz session", id);
+                }
+            }
+            catch(Exception ex)
+            {
+                result.Message = ex.Message;
+                StudyNestLogger.Instance.Error(ex.Message);
+            }
+            return result;
+        }
+        public async Task<ReturnResult<bool>> StartQuiz(string quizSessionId)
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+            try
+            {
+                var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == quizSessionId.Trim() &&
+                                                         x.Status == QuizSessionStatus.NotStarted 
+                                                         && x.OwnerId == _userContext.UserId
+                                                        ).FirstOrDefaultAsync();
+                if(existingQuizSession != null)
+                {
+                    existingQuizSession.Status = QuizSessionStatus.InProgress;
+                    if(await _dbContext.SaveChangesAsync() > 0)
+                    {
+                        result.Result = true;
+                    }
+                    else
+                    {
+                        result.Message = string.Format("Fail to save, please try to start again");
+                    }
+                }
+                else
+                {
+                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", quizSessionId);
+                }
+            }
+            catch(Exception ex)
+            {
+                result.Message = ex.Message;
+                StudyNestLogger.Instance.Error(ex.Message);
+            }
+            return result;
+        }
+        public async Task<ReturnResult<string>> GetQuizIdByQuizSessionId(string quizSessionId)
+        {
+            ReturnResult<string> result = new ReturnResult<string>();
+            try
+            {
+                var existingSession = await _dbContext.QuizSessions.Where(x => x.Id == quizSessionId).Include(x => x.QuizAttemptSnapshot).FirstOrDefaultAsync();
+                if(existingSession != null)
+                {
+                    result.Result = existingSession.QuizAttemptSnapshot.QuizId ?? "";
+                }
+                else
+                {
+                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", quizSessionId);
+                }
             }
             catch(Exception ex)
             {

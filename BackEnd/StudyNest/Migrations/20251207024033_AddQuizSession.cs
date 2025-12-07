@@ -28,6 +28,7 @@ namespace StudyNest.Migrations
                     TimeForEachQuestion = table.Column<int>(type: "integer", nullable: false),
                     DateTimeEnded = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     QuizAttemptSnapshotId = table.Column<string>(type: "text", nullable: false),
+                    OwnerId = table.Column<string>(type: "text", nullable: false),
                     DateCreated = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DateModified = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Deleted = table.Column<bool>(type: "boolean", nullable: false),
@@ -36,6 +37,12 @@ namespace StudyNest.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_QuizSessions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_QuizSessions_AspNetUsers_OwnerId",
+                        column: x => x.OwnerId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_QuizSessions_QuizAttemptSnapshots_QuizAttemptSnapshotId",
                         column: x => x.QuizAttemptSnapshotId,
@@ -53,6 +60,11 @@ namespace StudyNest.Migrations
                 name: "IX_QuizSessions_Deleted",
                 table: "QuizSessions",
                 column: "Deleted");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QuizSessions_OwnerId",
+                table: "QuizSessions",
+                column: "OwnerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_QuizSessions_QuizAttemptSnapshotId",
