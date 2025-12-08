@@ -1,29 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { Card } from 'antd';
+import { Card, Typography } from 'antd';
 import { QuestionDTO } from '@/types/question/questionDTO';
 import { CreateQuizAttemptAnswerDTO } from '@/types/quizAttemptAnswer/createQuizAttemptAnswerDTO';
-import { QuizAttemptAnswerDTO } from '@/types/quizAttemptAnswer/quizAttemptAnswerDTO';
 import { useReduxDispatch } from '@/hooks/reduxHook/useReduxDispatch';
-import { setAnswer } from '@/store/quizSessionAtemptSlice';
-import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { useReduxSelector } from '@/hooks/reduxHook/useReduxSelector';
+import { setAnswer, selectCurrentAnswer, selectIsTimeUp } from '@/store/quizSessionAtemptSlice';
+import { CheckCircleFilled, CloseCircleFilled } from '@ant-design/icons';
+import { useAntDesignTheme } from '@/hooks/common';
 
-interface QuizSessionMCQProps {
-    question: QuestionDTO;
-    answer: CreateQuizAttemptAnswerDTO | null;
-    submitResult: QuizAttemptAnswerDTO | undefined;
-}
+const { Text } = Typography;
 
-// Kahoot-style colors for different answer options
-const ANSWER_COLORS = [
-    { bg: '#e21b3c', hover: '#c41230', name: 'Red' },
-    { bg: '#1368ce', hover: '#0d4fa3', name: 'Blue' },
-    { bg: '#ffa602', hover: '#d88e02', name: 'Yellow' },
-    { bg: '#26890c', hover: '#1d6909', name: 'Green' },
-];
-
-const QuizSessionMCQ: React.FC<QuizSessionMCQProps> = ({ question, answer, submitResult }) => {
-    const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
+const QuizSessionMCQ: React.FC = () => {
     const dispatch = useReduxDispatch();
+    const answer = useReduxSelector(selectCurrentAnswer);
+    const isTimeUp = useReduxSelector(selectIsTimeUp);
+    const { primaryColor, textColor, bgColor } = useAntDesignTheme();
+    const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
+
+    // Get the question from Redux
+    const question = useReduxSelector((state) => state.quizSessionAttempt.questions[state.quizSessionAttempt.currentQuestionIndex]);
 
     useEffect(() => {
         if (answer && answer.QuizAttemptAnswerChoices?.length > 0) {
@@ -33,8 +28,10 @@ const QuizSessionMCQ: React.FC<QuizSessionMCQProps> = ({ question, answer, submi
         }
     }, [answer]);
 
+    if (!question) return null;
+
     const handleSelectAnswer = (choiceId: string) => {
-        if (submitResult) return; // Disable selection after submission
+        if (isTimeUp) return;
         setSelectedChoiceId(choiceId);
         const newAnswer: CreateQuizAttemptAnswerDTO = {
             snapShotQuestionId: question.id,
@@ -43,110 +40,200 @@ const QuizSessionMCQ: React.FC<QuizSessionMCQProps> = ({ question, answer, submi
         dispatch(setAnswer(newAnswer));
     };
 
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">{question.choices.slice(0, 4).map((choice, index) => {
-            const colorScheme = ANSWER_COLORS[index % ANSWER_COLORS.length];
-            const isSelected = selectedChoiceId === choice.id;
-            const isCorrectAnswer = choice.isCorrect;
-            const wasSelectedByUser = submitResult?.quizAttemptAnswerChoices.some(c => c.choiceId === choice.id);
+    const getChoiceStyle = (choiceId: string, isCorrect: boolean) => {
+        const isSelected = selectedChoiceId === choiceId;
+        
+        // Base style
+        const style: React.CSSProperties = {
+            border: `2px solid ${primaryColor}40`,
+            borderRadius: 0,
+            minHeight: '80px',
+            transition: 'all 0.2s ease',
+            cursor: isTimeUp ? 'default' : 'pointer',
+            position: 'relative',
+            backgroundColor: bgColor,
+        };
 
-            // Determine the visual state after submission
-            let borderColor = 'none';
-            let icon: React.ReactNode = null;
-            if (submitResult) {
-                if (isCorrectAnswer) {
-                    borderColor = '4px solid #52c41a'; // Green border for correct answer
-                    icon = <CheckOutlined style={{ color: '#52c41a', fontSize: '24px' }} />;
-                } else if (wasSelectedByUser && !isCorrectAnswer) {
-                    borderColor = '4px solid #ff4d4f'; // Red border for wrong selection
-                    icon = <CloseOutlined style={{ color: '#ff4d4f', fontSize: '24px' }} />;
-                }
+        // Before time up - show selection
+        if (!isTimeUp) {
+            if (isSelected) {
+                style.border = `3px solid ${primaryColor}`;
+                style.boxShadow = `5px 5px 0px ${primaryColor}60`;
+                style.transform = 'translate(-2px, -2px)';
+                style.backgroundColor = `${primaryColor}08`;
+            } else {
+                style.boxShadow = `3px 3px 0px ${primaryColor}30`;
             }
+        }
+        
+        // After time up - show correct/incorrect based on selectedChoiceId
+        if (isTimeUp) {
+            if (isCorrect) {
+                // Correct answer - green theme
+                style.border = `3px solid #10b981`;
+                style.boxShadow = `5px 5px 0px #10b98160`;
+                style.backgroundColor = `#10b98110`;
+            } else if (isSelected) {
+                // Wrong answer that user selected - accent with warning
+                style.border = `3px solid ${primaryColor}`;
+                style.boxShadow = `5px 5px 0px ${primaryColor}60`;
+                style.backgroundColor = `${primaryColor}15`;
+                style.opacity = 0.85;
+            } else {
+                // Not selected and not correct
+                style.opacity = 0.4;
+            }
+        }
 
+        return style;
+    };
+
+    const getHoverStyle = (choiceId: string): React.CSSProperties => {
+        if (isTimeUp) return {};
+        const isSelected = selectedChoiceId === choiceId;
+        if (isSelected) return {};
+        
+        return {
+            border: `2px solid ${primaryColor}80`,
+            boxShadow: `4px 4px 0px ${primaryColor}50`,
+            transform: 'translate(-1px, -1px)',
+        };
+    };
+
+    const renderFeedbackIcon = (choiceId: string, isCorrect: boolean) => {
+        if (!isTimeUp) return null;
+        
+        const isSelected = selectedChoiceId === choiceId;
+        
+        if (isCorrect) {
             return (
-                <Card
+                <div className="absolute top-3 right-3">
+                    <CheckCircleFilled style={{ fontSize: '28px', color: '#10b981' }} />
+                </div>
+            );
+        } else if (isSelected) {
+            return (
+                <div className="absolute top-3 right-3">
+                    <CloseCircleFilled style={{ fontSize: '28px', color: primaryColor }} />
+                </div>
+            );
+        }
+        
+        return null;
+    };
+
+    const renderSelectionBadge = (choiceId: string) => {
+        if (isTimeUp) return null;
+        
+        const isSelected = selectedChoiceId === choiceId;
+        if (!isSelected) return null;
+
+        return (
+            <div 
+                className="absolute top-3 right-3"
+                style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    backgroundColor: primaryColor,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: `0 2px 8px ${primaryColor}60`,
+                }}
+            >
+                <CheckCircleFilled style={{ fontSize: '20px', color: '#ffffff' }} />
+            </div>
+        );
+    };
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
+            {question.choices.map((choice, index) => (
+                <ChoiceCard
                     key={choice.id}
-                    hoverable={!submitResult}
-                    onClick={() => handleSelectAnswer(choice.id)}
-                    className={submitResult ? '' : 'cursor-pointer transition-all duration-300'}
+                    choice={choice}
+                    index={index}
+                    isTimeUp={isTimeUp}
+                    primaryColor={primaryColor}
+                    textColor={textColor}
+                    handleSelectAnswer={handleSelectAnswer}
+                    getChoiceStyle={getChoiceStyle}
+                    getHoverStyle={getHoverStyle}
+                    renderSelectionBadge={renderSelectionBadge}
+                    renderFeedbackIcon={renderFeedbackIcon}
+                />
+            ))}
+        </div>
+    );
+};
+
+// Helper component to avoid hook issues in map
+const ChoiceCard: React.FC<{
+    choice: any;
+    index: number;
+    isTimeUp: boolean;
+    primaryColor: string;
+    textColor: string;
+    handleSelectAnswer: (id: string) => void;
+    getChoiceStyle: (id: string, isCorrect: boolean) => React.CSSProperties;
+    getHoverStyle: (id: string) => React.CSSProperties;
+    renderSelectionBadge: (id: string) => React.ReactNode;
+    renderFeedbackIcon: (id: string, isCorrect: boolean) => React.ReactNode;
+}> = ({
+    choice,
+    index,
+    isTimeUp,
+    primaryColor,
+    textColor,
+    handleSelectAnswer,
+    getChoiceStyle,
+    getHoverStyle,
+    renderSelectionBadge,
+    renderFeedbackIcon,
+}) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const baseStyle = getChoiceStyle(choice.id, choice.isCorrect);
+    const hoverStyle = getHoverStyle(choice.id);
+
+    return (
+        <Card
+            hoverable={!isTimeUp}
+            onClick={() => handleSelectAnswer(choice.id)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            style={isHovered ? { ...baseStyle, ...hoverStyle } : baseStyle}
+            bodyStyle={{ padding: '20px' }}
+        >
+            {renderSelectionBadge(choice.id)}
+            {renderFeedbackIcon(choice.id, choice.isCorrect)}
+            
+            <div className="pr-10">
+                <Text
+                    strong
                     style={{
-                        backgroundColor: colorScheme.bg,
-                        border: borderColor,
-                        borderRadius: 0,
-                        minHeight: '80px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: isSelected && !submitResult
-                            ? `0 0 0 4px #ffffff, 0 0 0 8px ${colorScheme.bg}`
-                            : '3px 3px 0px rgba(0,0,0,0.2)',
-                        transform: isSelected && !submitResult ? 'scale(1.05)' : 'scale(1)',
-                        position: 'relative',
-                        cursor: submitResult ? 'default' : 'pointer',
-                        opacity: submitResult && !isCorrectAnswer && !wasSelectedByUser ? 0.5 : 1,
-                    }}
-                    onMouseEnter={(e) => {
-                        if (!isSelected && !submitResult) {
-                            e.currentTarget.style.backgroundColor = colorScheme.hover;
-                            e.currentTarget.style.transform = 'scale(1.03)';
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        if (!isSelected && !submitResult) {
-                            e.currentTarget.style.backgroundColor = colorScheme.bg;
-                            e.currentTarget.style.transform = 'scale(1)';
-                        }
+                        fontFamily: '"Courier New", monospace',
+                        fontSize: '0.9rem',
+                        color: primaryColor,
+                        display: 'block',
+                        marginBottom: '8px',
                     }}
                 >
-                    {(isSelected && !submitResult) && (!submitResult) && (
-                        <div
-                            className="absolute top-3 right-3"
-                            style={{
-                                backgroundColor: '#ffffff',
-                                borderRadius: '50%',
-                                width: '32px',
-                                height: '32px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <CheckOutlined style={{ color: colorScheme.bg, fontSize: '20px' }} />
-                        </div>
-                    )}
-                    {submitResult && icon && (
-                        <div
-                            className="absolute top-3 right-3"
-                            style={{
-                                backgroundColor: '#ffffff',
-                                borderRadius: '50%',
-                                width: '36px',
-                                height: '36px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            {icon}
-                        </div>
-                    )}
-                    <div className="text-center px-3">
-                        <p
-                            className="text-white font-bold m-0"
-                            style={{
-                                fontFamily: '"Courier New", monospace',
-                                fontSize: '1.1rem',
-                                lineHeight: 1.3,
-                                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-                            }}
-                        >
-                            {choice.text}
-                        </p>
-                    </div>
-                </Card>
-            );
-        })}
-        </div>
+                    Option {String.fromCharCode(65 + index)}
+                </Text>
+                <Text
+                    style={{
+                        fontFamily: '"Courier New", monospace',
+                        fontSize: '1.05rem',
+                        color: textColor,
+                        display: 'block',
+                        lineHeight: 1.4,
+                    }}
+                >
+                    {choice.text}
+                </Text>
+            </div>
+        </Card>
     );
 };
 

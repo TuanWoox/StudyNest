@@ -46,5 +46,19 @@ namespace StudyNest.Controllers
             }
             return Ok(result);
         }
+        [HttpPut("Start/{id}")]
+        public async Task<IActionResult> StartQuizSession(string id)
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+            try
+            {
+                result = await _quizSessionBusiness.StartQuizSession(id);
+            }
+            catch(Exception ex)
+            {
+                StudyNestLogger.Instance.Error(ex.Message);
+            }
+            return Ok(result);
+        }
     }
 }

@@ -1,21 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { Card } from 'antd';
+import { Card, Typography } from 'antd';
 import { QuestionDTO } from '@/types/question/questionDTO';
 import { CreateQuizAttemptAnswerDTO } from '@/types/quizAttemptAnswer/createQuizAttemptAnswerDTO';
-import { QuizAttemptAnswerDTO } from '@/types/quizAttemptAnswer/quizAttemptAnswerDTO';
 import { useReduxDispatch } from '@/hooks/reduxHook/useReduxDispatch';
-import { setAnswer } from '@/store/quizSessionAtemptSlice';
-import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { useReduxSelector } from '@/hooks/reduxHook/useReduxSelector';
+import { setAnswer, selectCurrentAnswer, selectIsTimeUp } from '@/store/quizSessionAtemptSlice';
+import { CheckCircleFilled, CloseCircleFilled } from '@ant-design/icons';
+import { useAntDesignTheme } from '@/hooks/common';
 
-interface QuizSessionTFProps {
-    question: QuestionDTO;
-    answer: CreateQuizAttemptAnswerDTO | null;
-    submitResult: QuizAttemptAnswerDTO | undefined;
-}
+const { Text } = Typography;
 
-const QuizSessionTF: React.FC<QuizSessionTFProps> = ({ question, answer, submitResult }) => {
-    const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
+const QuizSessionTF: React.FC = () => {
     const dispatch = useReduxDispatch();
+    const answer = useReduxSelector(selectCurrentAnswer);
+    const isTimeUp = useReduxSelector(selectIsTimeUp);
+    const { primaryColor, textColor, bgColor } = useAntDesignTheme();
+    const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
+
+    // Get the question from Redux
+    const question = useReduxSelector((state) => state.quizSessionAttempt.questions[state.quizSessionAttempt.currentQuestionIndex]);
 
     useEffect(() => {
         if (answer && answer.QuizAttemptAnswerChoices?.length > 0) {
@@ -25,8 +28,10 @@ const QuizSessionTF: React.FC<QuizSessionTFProps> = ({ question, answer, submitR
         }
     }, [answer]);
 
+    if (!question) return null;
+
     const handleSelectAnswer = (choiceId: string) => {
-        if (submitResult) return; // Disable selection after submission
+        if (isTimeUp) return;
         setSelectedChoiceId(choiceId);
         const newAnswer: CreateQuizAttemptAnswerDTO = {
             snapShotQuestionId: question.id,
@@ -39,202 +44,200 @@ const QuizSessionTF: React.FC<QuizSessionTFProps> = ({ question, answer, submitR
     const trueChoice = question.choices.find(c => c.text.toLowerCase() === 'true');
     const falseChoice = question.choices.find(c => c.text.toLowerCase() === 'false');
 
-    // Determine styling for True card
-    const trueIsCorrect = trueChoice?.isCorrect;
-    const trueWasSelected = submitResult?.quizAttemptAnswerChoices.some(c => c.choiceId === trueChoice?.id);
-    let trueBorderColor = 'none';
-    let trueIcon: React.ReactNode = null;
-    if (submitResult && trueChoice) {
-        if (trueIsCorrect) {
-            trueBorderColor = '4px solid #52c41a';
-            trueIcon = <CheckOutlined style={{ color: '#52c41a', fontSize: '24px' }} />;
-        } else if (trueWasSelected && !trueIsCorrect) {
-            trueBorderColor = '4px solid #ff4d4f';
-            trueIcon = <CloseOutlined style={{ color: '#ff4d4f', fontSize: '24px' }} />;
-        }
-    }
+    const getChoiceStyle = (choiceId: string | undefined, isCorrect: boolean | undefined) => {
+        if (!choiceId) return {};
+        
+        const isSelected = selectedChoiceId === choiceId;
+        
+        // Base style
+        const style: React.CSSProperties = {
+            border: `2px solid ${primaryColor}40`,
+            borderRadius: 0,
+            minHeight: '120px',
+            transition: 'all 0.2s ease',
+            cursor: isTimeUp ? 'default' : 'pointer',
+            position: 'relative',
+            backgroundColor: bgColor,
+        };
 
-    // Determine styling for False card
-    const falseIsCorrect = falseChoice?.isCorrect;
-    const falseWasSelected = submitResult?.quizAttemptAnswerChoices.some(c => c.choiceId === falseChoice?.id);
-    let falseBorderColor = 'none';
-    let falseIcon: React.ReactNode = null;
-    if (submitResult && falseChoice) {
-        if (falseIsCorrect) {
-            falseBorderColor = '4px solid #52c41a';
-            falseIcon = <CheckOutlined style={{ color: '#52c41a', fontSize: '24px' }} />;
-        } else if (falseWasSelected && !falseIsCorrect) {
-            falseBorderColor = '4px solid #ff4d4f';
-            falseIcon = <CloseOutlined style={{ color: '#ff4d4f', fontSize: '24px' }} />;
+        // Before time up - show selection
+        if (!isTimeUp) {
+            if (isSelected) {
+                style.border = `3px solid ${primaryColor}`;
+                style.boxShadow = `5px 5px 0px ${primaryColor}60`;
+                style.transform = 'translate(-2px, -2px)';
+                style.backgroundColor = `${primaryColor}08`;
+            } else {
+                style.boxShadow = `3px 3px 0px ${primaryColor}30`;
+            }
         }
-    }
+        
+        // After time up - show correct/incorrect
+        if (isTimeUp) {
+            if (isCorrect) {
+                // Correct answer - green theme
+                style.border = `3px solid #10b981`;
+                style.boxShadow = `5px 5px 0px #10b98160`;
+                style.backgroundColor = `#10b98110`;
+            } else if (isSelected) {
+                // Wrong answer that user selected - accent with warning
+                style.border = `3px solid ${primaryColor}`;
+                style.boxShadow = `5px 5px 0px ${primaryColor}60`;
+                style.backgroundColor = `${primaryColor}15`;
+                style.opacity = 0.85;
+            } else {
+                // Not selected and not correct
+                style.opacity = 0.4;
+            }
+        }
+
+        return style;
+    };
+
+    const getHoverStyle = (choiceId: string | undefined): React.CSSProperties => {
+        if (!choiceId || isTimeUp) return {};
+        const isSelected = selectedChoiceId === choiceId;
+        if (isSelected) return {};
+        
+        return {
+            border: `2px solid ${primaryColor}80`,
+            boxShadow: `4px 4px 0px ${primaryColor}50`,
+            transform: 'translate(-1px, -1px)',
+        };
+    };
+
+    const renderFeedbackIcon = (choiceId: string | undefined, isCorrect: boolean | undefined) => {
+        if (!isTimeUp || !choiceId) return null;
+        
+        const isSelected = selectedChoiceId === choiceId;
+        
+        if (isCorrect) {
+            return (
+                <div className="absolute top-3 right-3">
+                    <CheckCircleFilled style={{ fontSize: '32px', color: '#10b981' }} />
+                </div>
+            );
+        } else if (isSelected) {
+            return (
+                <div className="absolute top-3 right-3">
+                    <CloseCircleFilled style={{ fontSize: '32px', color: primaryColor }} />
+                </div>
+            );
+        }
+        
+        return null;
+    };
+
+    const renderSelectionBadge = (choiceId: string | undefined) => {
+        if (isTimeUp || !choiceId) return null;
+        
+        const isSelected = selectedChoiceId === choiceId;
+        if (!isSelected) return null;
+
+        return (
+            <div 
+                className="absolute top-3 right-3"
+                style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    backgroundColor: primaryColor,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: `0 2px 8px ${primaryColor}60`,
+                }}
+            >
+                <CheckCircleFilled style={{ fontSize: '22px', color: '#ffffff' }} />
+            </div>
+        );
+    };
 
     return (
         <div className="grid grid-cols-2 gap-6 max-w-2xl mx-auto px-4">
             {/* True Card */}
             {trueChoice && (
-                <Card
-                    hoverable={!submitResult}
-                    onClick={() => handleSelectAnswer(trueChoice.id)}
-                    className={submitResult ? '' : 'cursor-pointer transition-all duration-300'}
-                    style={{
-                        backgroundColor: '#26890c',
-                        border: trueBorderColor,
-                        borderRadius: '8px',
-                        minHeight: '100px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: selectedChoiceId === trueChoice.id && !submitResult
-                            ? '0 0 0 3px #ffffff, 0 0 0 6px #26890c'
-                            : '3px 3px 0px rgba(0,0,0,0.2)',
-                        transform: selectedChoiceId === trueChoice.id && !submitResult ? 'scale(1.05)' : 'scale(1)',
-                        position: 'relative',
-                        cursor: submitResult ? 'default' : 'pointer',
-                        opacity: submitResult && !trueIsCorrect && !trueWasSelected ? 0.5 : 1,
-                    }}
-                    onMouseEnter={(e) => {
-                        if (selectedChoiceId !== trueChoice.id && !submitResult) {
-                            e.currentTarget.style.backgroundColor = '#1d6909';
-                            e.currentTarget.style.transform = 'scale(1.02)';
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        if (selectedChoiceId !== trueChoice.id && !submitResult) {
-                            e.currentTarget.style.backgroundColor = '#26890c';
-                            e.currentTarget.style.transform = 'scale(1)';
-                        }
-                    }}
-                >
-                    {(selectedChoiceId === trueChoice.id && !submitResult) && (!submitResult) && (
-                        <div
-                            className="absolute top-3 right-3"
-                            style={{
-                                backgroundColor: '#ffffff',
-                                borderRadius: '50%',
-                                width: '32px',
-                                height: '32px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <CheckOutlined style={{ color: '#26890c', fontSize: '18px' }} />
-                        </div>
-                    )}
-                    {submitResult && trueIcon && (
-                        <div
-                            className="absolute top-3 right-3"
-                            style={{
-                                backgroundColor: '#ffffff',
-                                borderRadius: '50%',
-                                width: '36px',
-                                height: '36px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            {trueIcon}
-                        </div>
-                    )}
-                    <div className="text-center">
-                        <p
-                            className="text-white font-bold m-0"
-                            style={{
-                                fontFamily: '"Courier New", monospace',
-                                fontSize: '2rem',
-                                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-                            }}
-                        >
-                            TRUE
-                        </p>
-                    </div>
-                </Card>
+                <TFChoiceCard
+                    choice={trueChoice}
+                    label="TRUE"
+                    isTimeUp={isTimeUp}
+                    textColor={textColor}
+                    handleSelectAnswer={handleSelectAnswer}
+                    getChoiceStyle={getChoiceStyle}
+                    getHoverStyle={getHoverStyle}
+                    renderSelectionBadge={renderSelectionBadge}
+                    renderFeedbackIcon={renderFeedbackIcon}
+                />
             )}
 
             {/* False Card */}
             {falseChoice && (
-                <Card
-                    hoverable={!submitResult}
-                    onClick={() => handleSelectAnswer(falseChoice.id)}
-                    className={submitResult ? '' : 'cursor-pointer transition-all duration-300'}
-                    style={{
-                        backgroundColor: '#e21b3c',
-                        border: falseBorderColor,
-                        borderRadius: '8px',
-                        minHeight: '100px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: selectedChoiceId === falseChoice.id && !submitResult
-                            ? '0 0 0 3px #ffffff, 0 0 0 6px #e21b3c'
-                            : '3px 3px 0px rgba(0,0,0,0.2)',
-                        transform: selectedChoiceId === falseChoice.id && !submitResult ? 'scale(1.05)' : 'scale(1)',
-                        position: 'relative',
-                        cursor: submitResult ? 'default' : 'pointer',
-                        opacity: submitResult && !falseIsCorrect && !falseWasSelected ? 0.5 : 1,
-                    }}
-                    onMouseEnter={(e) => {
-                        if (selectedChoiceId !== falseChoice.id && !submitResult) {
-                            e.currentTarget.style.backgroundColor = '#c41230';
-                            e.currentTarget.style.transform = 'scale(1.02)';
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        if (selectedChoiceId !== falseChoice.id && !submitResult) {
-                            e.currentTarget.style.backgroundColor = '#e21b3c';
-                            e.currentTarget.style.transform = 'scale(1)';
-                        }
-                    }}
-                >
-                    {(selectedChoiceId === falseChoice.id && !submitResult) && (!submitResult) && (
-                        <div
-                            className="absolute top-3 right-3"
-                            style={{
-                                backgroundColor: '#ffffff',
-                                borderRadius: '50%',
-                                width: '32px',
-                                height: '32px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <CheckOutlined style={{ color: '#e21b3c', fontSize: '18px' }} />
-                        </div>
-                    )}
-                    {submitResult && falseIcon && (
-                        <div
-                            className="absolute top-3 right-3"
-                            style={{
-                                backgroundColor: '#ffffff',
-                                borderRadius: '50%',
-                                width: '36px',
-                                height: '36px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            {falseIcon}
-                        </div>
-                    )}
-                    <div className="text-center">
-                        <p
-                            className="text-white font-bold m-0"
-                            style={{
-                                fontFamily: '"Courier New", monospace',
-                                fontSize: '2rem',
-                                textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-                            }}
-                        >
-                            FALSE
-                        </p>
-                    </div>
-                </Card>
+                <TFChoiceCard
+                    choice={falseChoice}
+                    label="FALSE"
+                    isTimeUp={isTimeUp}
+                    textColor={textColor}
+                    handleSelectAnswer={handleSelectAnswer}
+                    getChoiceStyle={getChoiceStyle}
+                    getHoverStyle={getHoverStyle}
+                    renderSelectionBadge={renderSelectionBadge}
+                    renderFeedbackIcon={renderFeedbackIcon}
+                />
             )}
         </div>
+    );
+};
+
+// Helper component to avoid hook issues
+const TFChoiceCard: React.FC<{
+    choice: any;
+    label: string;
+    isTimeUp: boolean;
+    textColor: string;
+    handleSelectAnswer: (id: string) => void;
+    getChoiceStyle: (id: string | undefined, isCorrect: boolean | undefined) => React.CSSProperties;
+    getHoverStyle: (id: string | undefined) => React.CSSProperties;
+    renderSelectionBadge: (id: string | undefined) => React.ReactNode;
+    renderFeedbackIcon: (id: string | undefined, isCorrect: boolean | undefined) => React.ReactNode;
+}> = ({
+    choice,
+    label,
+    isTimeUp,
+    textColor,
+    handleSelectAnswer,
+    getChoiceStyle,
+    getHoverStyle,
+    renderSelectionBadge,
+    renderFeedbackIcon,
+}) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const baseStyle = getChoiceStyle(choice.id, choice.isCorrect);
+    const hoverStyle = getHoverStyle(choice.id);
+
+    return (
+        <Card
+            hoverable={!isTimeUp}
+            onClick={() => handleSelectAnswer(choice.id)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            style={isHovered ? { ...baseStyle, ...hoverStyle } : baseStyle}
+            bodyStyle={{ padding: '24px', textAlign: 'center' }}
+        >
+            {renderSelectionBadge(choice.id)}
+            {renderFeedbackIcon(choice.id, choice.isCorrect)}
+            
+            <Text
+                strong
+                style={{
+                    fontFamily: '"Courier New", monospace',
+                    fontSize: '1.5rem',
+                    color: textColor,
+                    display: 'block',
+                }}
+            >
+                {label}
+            </Text>
+        </Card>
     );
 };
 

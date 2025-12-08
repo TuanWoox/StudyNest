@@ -53,11 +53,12 @@ namespace StudyNest.Infrastructures.Hangfire
         {
             services.AddHangfireServer(options =>
             {
-                options.WorkerCount = 1;
+                options.WorkerCount = 3;
                 options.ServerTimeout = TimeSpan.FromMinutes(5);
                 options.ShutdownTimeout = TimeSpan.FromMinutes(5);
                 options.ServerName = $"Hangfire.Server.{Environment.MachineName}";
                 options.Queues = new[] { "default" };
+                options.SchedulePollingInterval = TimeSpan.FromMilliseconds(500); // Check every 500ms
             });
         }
     }

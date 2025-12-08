@@ -1,24 +1,46 @@
-import React from 'react';
-import { Card, Progress, Typography, Image, Spin } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Progress, Typography, Image } from 'antd';
 import { useReduxSelector } from '@/hooks/reduxHook/useReduxSelector';
-import { selectQuizSessionCard, selectQuizSessionProgress } from '@/store/quizSessionAtemptSlice';
+import { useReduxDispatch } from '@/hooks/reduxHook/useReduxDispatch';
+import { selectQuizSessionCard, selectQuizSessionProgress, selectIsTimeUp, setIsTimeUp } from '@/store/quizSessionAtemptSlice';
 import { useAntDesignTheme } from '@/hooks/common';
-import { QuizAttemptAnswerDTO } from '@/types/quizAttemptAnswer/quizAttemptAnswerDTO';
+import useGetQuizSessionById from '@/hooks/quizSessionHook/useGetQuizSessionById';
+import { useParams } from 'react-router-dom';
 import QuizSessionMCQ from './QuizSessionQuestionTypes/QuizSessionMCQ';
 import QuizSessionMSQ from './QuizSessionQuestionTypes/QuizSessionMSQ';
 import QuizSessionTF from './QuizSessionQuestionTypes/QuizSessionTF';
 
 const { Title, Text, Paragraph } = Typography;
 
-interface QuizSessionDisplayProps {
-    submitResult: QuizAttemptAnswerDTO | undefined;
-    isSubmitting: boolean;
-}
-
-const QuizSessionDisplay: React.FC<QuizSessionDisplayProps> = ({ submitResult, isSubmitting }) => {
-    const { currentQuestion, currentAnswer } = useReduxSelector(selectQuizSessionCard);
+const QuizSessionDisplay: React.FC = () => {
+    const { sessionId } = useParams<{ sessionId: string }>();
+    const { data: quizSession } = useGetQuizSessionById(sessionId);
+    const { currentQuestion } = useReduxSelector(selectQuizSessionCard);
     const { currentQuestionNumber, totalQuestions } = useReduxSelector(selectQuizSessionProgress);
+    const isTimeUp = useReduxSelector(selectIsTimeUp);
     const { primaryColor, bgColor, cardBorderStyle, cardShadowStyle } = useAntDesignTheme();
+    const [timeRemaining, setTimeRemaining] = useState<number>(0);
+    const dispatch = useReduxDispatch();
+
+    // Initialize and countdown timer for each question
+    useEffect(() => {
+        if (!currentQuestion || !quizSession?.timeForEachQuestion || isTimeUp) return;
+        
+        setTimeRemaining(quizSession.timeForEachQuestion);
+        
+        const timer = setInterval(() => {
+            setTimeRemaining(prev => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    dispatch(setIsTimeUp(true));
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [currentQuestion?.id, quizSession?.timeForEachQuestion, isTimeUp, dispatch, currentQuestion]);
 
     if (!currentQuestion) {
         return (
@@ -43,10 +65,16 @@ const QuizSessionDisplay: React.FC<QuizSessionDisplayProps> = ({ submitResult, i
     }
 
     const progressPercent = (currentQuestionNumber / totalQuestions) * 100;
+    
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
 
     return (
         <div
-            className="w-full min-h-screen overflow-y-auto p-4"
+            className="w-full h-screen overflow-y-auto p-4"
             style={{ backgroundColor: bgColor }}
         >
             <div className="max-w-4xl mx-auto">
@@ -69,16 +97,30 @@ const QuizSessionDisplay: React.FC<QuizSessionDisplayProps> = ({ submitResult, i
                         >
                             Question {currentQuestionNumber} of {totalQuestions}
                         </Text>
-                        <Text
-                            style={{
-                                fontFamily: '"Courier New", monospace',
-                                color: primaryColor,
-                                fontWeight: 'bold',
-                                fontSize: '0.9rem',
-                            }}
-                        >
-                            {Math.round(progressPercent)}%
-                        </Text>
+                        <div className="flex items-center gap-4">
+                            {!isTimeUp && timeRemaining > 0 && (
+                                <Text
+                                    strong
+                                    style={{
+                                        fontFamily: '"Courier New", monospace',
+                                        fontSize: '1rem',
+                                        color: timeRemaining <= 10 ? '#ef4444' : primaryColor,
+                                    }}
+                                >
+                                    ⏱️ {formatTime(timeRemaining)}
+                                </Text>
+                            )}
+                            <Text
+                                style={{
+                                    fontFamily: '"Courier New", monospace',
+                                    color: primaryColor,
+                                    fontWeight: 'bold',
+                                    fontSize: '0.9rem',
+                                }}
+                            >
+                                {Math.round(progressPercent)}%
+                            </Text>
+                        </div>
                     </div>
                     <Progress
                         percent={progressPercent}
@@ -99,6 +141,31 @@ const QuizSessionDisplay: React.FC<QuizSessionDisplayProps> = ({ submitResult, i
                         marginBottom: 16
                     }}
                 >
+                    <div className="flex items-center justify-center mb-3">
+                        <div
+                            style={{
+                                display: 'inline-block',
+                                padding: '4px 12px',
+                                border: `2px solid ${primaryColor}`,
+                                backgroundColor: bgColor,
+                                boxShadow: `2px 2px 0px ${primaryColor}60`,
+                            }}
+                        >
+                            <Text
+                                strong
+                                style={{
+                                    fontFamily: '"Courier New", monospace',
+                                    fontSize: '0.85rem',
+                                    color: primaryColor,
+                                    textTransform: 'uppercase',
+                                }}
+                            >
+                                {currentQuestion.type.toLowerCase() === 'mcq' && '📝 Multiple Choice (Select One)'}
+                                {currentQuestion.type.toLowerCase() === 'msq' && '☑️ Multiple Select (Select All That Apply)'}
+                                {currentQuestion.type.toLowerCase() === 'tf' && '✓✗ True or False'}
+                            </Text>
+                        </div>
+                    </div>
                     <Title
                         level={3}
                         className="text-center mb-4"
@@ -132,72 +199,17 @@ const QuizSessionDisplay: React.FC<QuizSessionDisplayProps> = ({ submitResult, i
                 </Card>
 
                 {/* Answer Options */}
-                <div className="relative">
-                    {isSubmitting && (
-                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 rounded" style={{ pointerEvents: 'all' }}>
-                            <Spin size="large" />
-                        </div>
+                <div>
+                    {currentQuestion.type.toLowerCase() === 'mcq' && (
+                        <QuizSessionMCQ />
                     )}
-                    <div style={{ pointerEvents: isSubmitting ? 'none' : 'auto' }}>
-                        {currentQuestion.type.toLowerCase() === 'mcq' && (
-                            <QuizSessionMCQ question={currentQuestion} answer={currentAnswer} submitResult={submitResult} />
-                        )}
-                        {currentQuestion.type.toLowerCase() === 'msq' && (
-                            <QuizSessionMSQ question={currentQuestion} answer={currentAnswer} submitResult={submitResult} />
-                        )}
-                        {currentQuestion.type.toLowerCase() === 'tf' && (
-                            <QuizSessionTF question={currentQuestion} answer={currentAnswer} submitResult={submitResult} />
-                        )}
-                    </div>
+                    {currentQuestion.type.toLowerCase() === 'msq' && (
+                        <QuizSessionMSQ />
+                    )}
+                    {currentQuestion.type.toLowerCase() === 'tf' && (
+                        <QuizSessionTF />
+                    )}
                 </div>
-
-                {/* Explanation - Show after submission */}
-                {submitResult && currentQuestion.explanation && (
-                    <Card
-                        style={{
-                            border: submitResult.isCorrect ? '2px solid #52c41a' : '2px solid #ff4d4f',
-                            borderRadius: 0,
-                            boxShadow: submitResult.isCorrect
-                                ? '4px 4px 0px rgba(82, 196, 26, 0.3)'
-                                : '4px 4px 0px rgba(255, 77, 79, 0.3)',
-                            backgroundColor: submitResult.isCorrect ? '#f6ffed' : '#fff2f0',
-                            marginTop: 16,
-                        }}
-                    >
-                        <div className="flex items-start gap-2">
-                            <div
-                                style={{
-                                    fontSize: '20px',
-                                    marginTop: '2px',
-                                }}
-                            >
-                                {submitResult.isCorrect ? '✅' : '❌'}
-                            </div>
-                            <div className="flex-1">
-                                <Title
-                                    level={5}
-                                    style={{
-                                        fontFamily: '"Courier New", monospace',
-                                        color: submitResult.isCorrect ? '#52c41a' : '#ff4d4f',
-                                        marginBottom: '6px',
-                                        fontSize: '1rem',
-                                    }}
-                                >
-                                    {submitResult.isCorrect ? 'Correct!' : 'Incorrect'}
-                                </Title>
-                                <Paragraph
-                                    style={{
-                                        fontFamily: '"Courier New", monospace',
-                                        margin: 0,
-                                        fontSize: '0.9rem',
-                                    }}
-                                >
-                                    {currentQuestion.explanation}
-                                </Paragraph>
-                            </div>
-                        </div>
-                    </Card>
-                )}
             </div>
         </div>
     );

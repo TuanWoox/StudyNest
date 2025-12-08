@@ -342,7 +342,7 @@ namespace StudyNest.Business.v1
                     //Notify all user to submit the answer
                     await _sessionHub.Clients.Groups(quizSessionId).SubmitAnswer();
                     //We delay so that user can see the answer result before moving to next question
-                    await Task.Delay(5000);
+                    await Task.Delay(2000);
                     if (quizSessionResult.Result.CurrentQuestionIndex + 1 < snapshot.QuizQuestionsParsed?.Count())
                     {
                         // Move to next index
