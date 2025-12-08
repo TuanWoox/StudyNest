@@ -14,10 +14,9 @@ namespace StudyNest.Common.Interfaces
         public Task<ReturnResult<QuizSessionDTO>> CreateQuizSession(CreateQuizSessionDTO newEntity);
         public Task<ReturnResult<QuizSessionDTO>> GetQuizSessionById(string id);
         public Task<ReturnResult<bool>> TerminateQuizSessionAfterLongTimeNotStarted(string quizSessionId);
-        public Task<ReturnResult<bool>> JoinQuizSession(JoinQuizSessionDTO joinQuizSessionDTO);
-        public Task<ReturnResult<bool>> StartQuiz(string quizSessionId);
+        public Task<ReturnResult<List<string>>> JoinQuizSession(JoinQuizSessionDTO joinQuizSessionDTO, string connectionId);
+        public Task<ReturnResult<bool>> StartQuizSession(string quizSessionId);
         public Task<ReturnResult<string>> GetQuizIdByQuizSessionId(string quizSessionId);
-        public Task<ReturnResult<bool>> MoveToNextIndex(string quizSessionId);
         public Task<ReturnResult<bool>> TriggerSubmitAnswer(string quizSessionId, QuizAttemptSnapshotDTO snapshot);
     }
 }

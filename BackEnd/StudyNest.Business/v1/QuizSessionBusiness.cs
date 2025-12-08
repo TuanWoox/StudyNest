@@ -2,6 +2,7 @@
 using Hangfire;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using StudyNest.Business.Hubs.RealTimeCache;
 using StudyNest.Common.DbEntities.Entities;
 using StudyNest.Common.Interfaces;
 using StudyNest.Common.Models.DTOs.CoreDTO;
@@ -21,20 +22,48 @@ namespace StudyNest.Business.v1
         IMapper _mapper;
         IQuizAttemptSnapshotBusiness _quizAttemptSnapshotBusiness;
         IHubContext<Hubs.QuizSessionHub, Hubs.IQuizSessionClient> _sessionHub;
-        public QuizSessionBusiness(
-            ApplicationDbContext dbContext,
-            IUserContext userContext, 
-            IMapper mapper,
-            IQuizAttemptSnapshotBusiness quizAttemptSnapshotBusiness,
-            IHubContext<Hubs.QuizSessionHub, Hubs.IQuizSessionClient> sessionHub)
+        ISettingBusiness _settingBusiness;
+        IQuizAttemptBusiness _quizAttemptBusiness;
+   
+        public QuizSessionBusiness(ApplicationDbContext dbContext,
+           IUserContext userContext,
+           IMapper mapper,
+           IQuizAttemptSnapshotBusiness quizAttemptSnapshotBusiness,
+           IHubContext<Hubs.QuizSessionHub, Hubs.IQuizSessionClient> sessionHub,
+           ISettingBusiness settingBusiness,
+           IQuizAttemptBusiness quizAttemptBusiness)
         {
             this._dbContext = dbContext;
             this._quizAttemptSnapshotBusiness = quizAttemptSnapshotBusiness;
             this._userContext = userContext;
             this._mapper = mapper;
             this._sessionHub = sessionHub;
+            this._settingBusiness = settingBusiness;
+            this._quizAttemptBusiness = quizAttemptBusiness;
         }
-
+        public async Task<ReturnResult<QuizSessionDTO>> GetQuizSessionById(string id)
+        {
+            ReturnResult<QuizSessionDTO> result = new ReturnResult<QuizSessionDTO>();
+            try
+            {
+                var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == id.Trim())
+                                                                        .FirstOrDefaultAsync();
+                if (existingQuizSession != null)
+                {
+                    result.Result = _mapper.Map<QuizSessionDTO>(existingQuizSession);
+                }
+                else
+                {
+                    result.Message = String.Format(ResponseMessage.MESSAGE_ALL_ITEM_NOT_FOUND, "quiz session", id);
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                StudyNestLogger.Instance.Error(ex.Message);
+            }
+            return result;
+        }
         public async Task<ReturnResult<QuizSessionDTO>> CreateQuizSession(CreateQuizSessionDTO newEntity)
         {
             ReturnResult<QuizSessionDTO> result = new ReturnResult<QuizSessionDTO>();
@@ -96,6 +125,292 @@ namespace StudyNest.Business.v1
             }
             return result;
         }
+        public async Task<ReturnResult<List<string>>> JoinQuizSession(JoinQuizSessionDTO joinQuizSessionDTO, string connectionId)
+        {
+            var result = new ReturnResult<List<string>>();
+
+            try
+            {
+                // Validate user state before joining
+                var existingPlayer = QuizSessionCache.GetPlayerByUserId(joinQuizSessionDTO.Id, _userContext.UserId);
+
+                if (existingPlayer != null)
+                {
+                    // Update connection ID if user reconnected
+                    QuizSessionCache.UpdatePlayerConnection(joinQuizSessionDTO.Id, _userContext.UserId, connectionId);
+
+                    result.Message = "Already joined the quiz session. Connection updated.";
+                    result.Result = QuizSessionCache
+                        .GetPlayers(joinQuizSessionDTO.Id)
+                        .Select(p => p.Name)
+                        .ToList();
+
+                    return result;
+                }
+
+                // Check if user is already in another session
+                var otherSessionId = QuizSessionCache.FindSessionByUserId(_userContext.UserId, joinQuizSessionDTO.Id);
+
+                if (otherSessionId != null)
+                {
+                    result.Message = "User already in another quiz session. Please leave that session first.";
+                    return result;
+                }
+
+                // Get max connection setting with default value
+                var settingResult = await _settingBusiness.GetOneByKeyAndGroup("MAX_CONNECTION", "QUIZ_SESSSION");
+                var maxConnectionSetting = 10; // default value
+
+                if (settingResult?.Result?.Value != null &&
+                    int.TryParse(settingResult.Result.Value, out var parsedValue))
+                {
+                    maxConnectionSetting = parsedValue;
+                }
+
+                // Check if session has reached maximum capacity
+                int currentPlayersInSession = QuizSessionCache.GetPlayerCount(joinQuizSessionDTO.Id);
+
+                if (currentPlayersInSession >= maxConnectionSetting)
+                {
+                    result.Message = $"Quiz session has reached its maximum capacity of {maxConnectionSetting} players.";
+                    return result;
+                }
+
+                // Validate quiz session exists and is available to join
+                // If it is the owner, no need to check game pin otherwise need to match
+                var existingQuizSession = await _dbContext.QuizSessions
+                    .Where(x => x.Id == joinQuizSessionDTO.Id &&
+                               (x.GamePin == joinQuizSessionDTO.GamePin || x.OwnerId == _userContext.UserId))
+                    .FirstOrDefaultAsync();
+
+                if (existingQuizSession == null)
+                {
+                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", joinQuizSessionDTO.Id);
+                    return result;
+                }
+
+                if (existingQuizSession.Status != Common.Utils.Enums.QuizSessionStatus.NotStarted)
+                {
+                    result.Message = "This quiz session is no longer available to join";
+                    return result;
+                }
+
+                // All validations passed - add player to session
+                // Initialize session in cache if not exists
+                QuizSessionCache.InitializeSession(joinQuizSessionDTO.Id);
+
+                // Add player information to the cache
+                var newPlayer = new PlayerInformation
+                {
+                    Name = _userContext.UserName,
+                    UserId = _userContext.UserId,
+                    ConnectionId = connectionId
+                };
+
+                QuizSessionCache.AddPlayer(joinQuizSessionDTO.Id, newPlayer);
+
+                result.Result = QuizSessionCache
+                    .GetPlayers(joinQuizSessionDTO.Id)
+                    .Select(x => x.Name)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                result.Message = "An error occurred while joining the quiz session.";
+                StudyNestLogger.Instance.Error(ex);
+            }
+
+            return result;
+        }
+        public async Task<ReturnResult<bool>> StartQuizSession(string quizSessionId)
+        {
+            var result = new ReturnResult<bool>();
+
+            try
+            {
+                // Validate that the quiz session exists, has players, and belongs to owner
+                var existingQuizSession = await _dbContext.QuizSessions
+                    .Where(x => x.Id == quizSessionId.Trim() &&
+                                x.Status == QuizSessionStatus.NotStarted &&
+                                x.OwnerId == _userContext.UserId)
+                    .FirstOrDefaultAsync();
+
+                if (existingQuizSession == null)
+                {
+                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", quizSessionId);
+                    return result;
+                }
+
+                // Validate players exist
+                var players = QuizSessionCache.GetPlayers(quizSessionId);
+
+                if (players.Count == 0)
+                {
+                    result.Message = "Cannot start quiz with no players.";
+                    return result;
+                }
+
+                // Notify loading state
+                await _sessionHub.Clients.Group(quizSessionId).QuizToggleLoadingPrepare(new
+                {
+                    loading = true
+                });
+
+                await Task.Delay(2000);
+
+                // Mark session as InProgress
+                existingQuizSession.Status = QuizSessionStatus.InProgress;
+
+                if (await _dbContext.SaveChangesAsync() <= 0)
+                {
+                    result.Message = "Fail to save, please try to start again";
+                    return result;
+                }
+
+                // Get quiz id and quiz session info
+                var quizIdResult = await GetQuizIdByQuizSessionId(quizSessionId);
+                var quizSessionResult = await GetQuizSessionById(quizSessionId);
+
+                if (string.IsNullOrEmpty(quizIdResult.Result))
+                {
+                    result.Message = "Failed to retrieve quiz ID.";
+                    return result;
+                }
+
+                // Get quiz snapshot
+                var quizAttemptSnapshotResult = await _quizAttemptSnapshotBusiness
+                    .GetOneByIdForAttempting(quizIdResult.Result, true);
+
+                if (quizAttemptSnapshotResult.Result == null)
+                {
+                    result.Message = quizAttemptSnapshotResult.Message ?? "Failed to retrieve quiz snapshot.";
+                    return result;
+                }
+
+                // Create quiz attempts for all players
+                var quizAttemptCreatedResult = await _quizAttemptBusiness.CreateQuizAttemptForQuizSession(
+                    players.Select(x => x.UserId).ToList(),
+                    quizAttemptSnapshotResult.Result.Id,
+                    quizSessionId
+                );
+
+                // Send individual quiz attempt to each player
+                foreach (var player in players)
+                {
+                    await _sessionHub.Clients.User(player.UserId).SendQuizAttempt(new
+                    {
+                        quizAttempt = quizAttemptCreatedResult.Result.FirstOrDefault(x => x.UserId == player.UserId)
+                    });
+                }
+
+                // Notify all players that quiz has started
+                await _sessionHub.Clients.Group(quizSessionId).QuizHasBeenStarted(new
+                {
+                    quizAttemptSnapshot = quizAttemptSnapshotResult.Result
+                });
+
+                // Schedule auto-submit
+                BackgroundJob.Schedule<IQuizSessionBusiness>(
+                    x => x.TriggerSubmitAnswer(quizSessionId, quizAttemptSnapshotResult.Result),
+                    TimeSpan.FromSeconds(quizSessionResult.Result.TimeForEachQuestion)
+                );
+
+                result.Result = true;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                StudyNestLogger.Instance.Error(ex.Message);
+            }
+
+            // Turn loading OFF for all users
+            await _sessionHub.Clients.Group(quizSessionId).QuizToggleLoadingPrepare(new
+            {
+                loading = false
+            });
+
+            return result;
+        }
+        public async Task<ReturnResult<bool>> TriggerSubmitAnswer(string quizSessionId, QuizAttemptSnapshotDTO snapshot)
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+            try
+            {
+                var quizSessionResult = await GetQuizSessionById(quizSessionId);
+                if (quizSessionResult.Result != null)
+                {
+                    //Notify all user to submit the answer
+                    await _sessionHub.Clients.Groups(quizSessionId).SubmitAnswer();
+                    //We delay so that user can see the answer result before moving to next question
+                    await Task.Delay(5000);
+                    if (quizSessionResult.Result.CurrentQuestionIndex + 1 < snapshot.QuizQuestionsParsed?.Count())
+                    {
+                        // Move to next index
+                        var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == quizSessionId.Trim()
+                                                                        && x.Status == QuizSessionStatus.InProgress)
+                                                                        .FirstOrDefaultAsync();
+                        if (existingQuizSession != null)
+                        {
+                            existingQuizSession.CurrentQuestionIndex = existingQuizSession.CurrentQuestionIndex + 1;
+                            _dbContext.Update(existingQuizSession);
+
+                            if (await _dbContext.SaveChangesAsync() > 0)
+                            {
+                                await _sessionHub.Clients.Groups(quizSessionId).MoveToNextQuestion();
+                                BackgroundJob.Schedule<IQuizSessionBusiness>(x => x.TriggerSubmitAnswer(quizSessionId, snapshot), TimeSpan.FromSeconds(quizSessionResult.Result.TimeForEachQuestion));
+                                result.Result = true;
+                            }
+                            else
+                            {
+                                result.Message = "Cannot save quiz session, please try again";
+                                StudyNestLogger.Instance.Error($"Failed to save quiz session {quizSessionId} when moving to next index");
+                            }
+                        }
+                        else
+                        {
+                            result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", quizSessionId);
+                            StudyNestLogger.Instance.Error($"Quiz session {quizSessionId} not found or not in progress when moving to next index");
+                        }
+                    }
+                    else
+                    {
+                        result.Result = true;
+                    }
+                }
+                else
+                {
+                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", quizSessionId);
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                StudyNestLogger.Instance.Error(ex.Message);
+            }
+            return result;
+        }
+        public async Task<ReturnResult<string>> GetQuizIdByQuizSessionId(string quizSessionId)
+        {
+            ReturnResult<string> result = new ReturnResult<string>();
+            try
+            {
+                var existingSession = await _dbContext.QuizSessions.Where(x => x.Id == quizSessionId).Include(x => x.QuizAttemptSnapshot).FirstOrDefaultAsync();
+                if(existingSession != null)
+                {
+                    result.Result = existingSession.QuizAttemptSnapshot.QuizId ?? "";
+                }
+                else
+                {
+                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", quizSessionId);
+                }
+            }
+            catch(Exception ex)
+            {
+                result.Message = ex.Message;
+                StudyNestLogger.Instance.Error(ex.Message);
+            }
+            return result;
+        }
         public async Task<ReturnResult<bool>> TerminateQuizSessionAfterLongTimeNotStarted(string quizSessionId)
         {
             var result = new ReturnResult<bool>();
@@ -142,176 +457,6 @@ namespace StudyNest.Business.v1
                 StudyNestLogger.Instance.Error(
                     $"Exception while terminating quizSessionId '{trimmedId}': {ex}"
                 );
-            }
-            return result;
-        }
-        public async Task<ReturnResult<bool>> JoinQuizSession(JoinQuizSessionDTO joinQuizSessionDTO)
-        {
-            ReturnResult<bool> result = new ReturnResult<bool>();
-            try
-            {
-                // If it is the owner, no need to check game pin otherwise need to match
-                var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == joinQuizSessionDTO.Id &&
-                                                                        (x.GamePin == joinQuizSessionDTO.GamePin || x.OwnerId == _userContext.UserId))
-                                                                        .FirstOrDefaultAsync();
-
-                if (existingQuizSession == null)
-                {
-                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", joinQuizSessionDTO.Id);
-                    return result;
-                }
-                if(existingQuizSession.Status != Common.Utils.Enums.QuizSessionStatus.NotStarted)
-                {
-                    result.Message = "This quiz session is no longer available to join";
-                    return result;
-                }
-                result.Result = true;
-            }
-            catch(Exception ex)
-            {
-                result.Message = ex.Message;
-                StudyNestLogger.Instance.Error(ex.Message);
-            }
-            return result;
-        }
-        public async Task<ReturnResult<QuizSessionDTO>> GetQuizSessionById(string id)
-        {
-            ReturnResult<QuizSessionDTO> result = new ReturnResult<QuizSessionDTO>();
-            try
-            {
-                var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == id.Trim())
-                                                                        .FirstOrDefaultAsync();
-                if(existingQuizSession != null)
-                {
-                    result.Result = _mapper.Map<QuizSessionDTO>(existingQuizSession);
-                }
-                else
-                {
-                    result.Message = String.Format(ResponseMessage.MESSAGE_ALL_ITEM_NOT_FOUND, "quiz session", id);
-                }
-            }
-            catch(Exception ex)
-            {
-                result.Message = ex.Message;
-                StudyNestLogger.Instance.Error(ex.Message);
-            }
-            return result;
-        }
-        public async Task<ReturnResult<bool>> StartQuiz(string quizSessionId)
-        {
-            ReturnResult<bool> result = new ReturnResult<bool>();
-            try
-            {
-                var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == quizSessionId.Trim() &&
-                                                         x.Status == QuizSessionStatus.NotStarted 
-                                                         && x.OwnerId == _userContext.UserId
-                                                        ).FirstOrDefaultAsync();
-                if(existingQuizSession != null)
-                {
-                    existingQuizSession.Status = QuizSessionStatus.InProgress;
-                    if(await _dbContext.SaveChangesAsync() > 0)
-                    {
-                        result.Result = true;
-                    }
-                    else
-                    {
-                        result.Message = string.Format("Fail to save, please try to start again");
-                    }
-                }
-                else
-                {
-                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", quizSessionId);
-                }
-            }
-            catch(Exception ex)
-            {
-                result.Message = ex.Message;
-                StudyNestLogger.Instance.Error(ex.Message);
-            }
-            return result;
-        }
-        public async Task<ReturnResult<string>> GetQuizIdByQuizSessionId(string quizSessionId)
-        {
-            ReturnResult<string> result = new ReturnResult<string>();
-            try
-            {
-                var existingSession = await _dbContext.QuizSessions.Where(x => x.Id == quizSessionId).Include(x => x.QuizAttemptSnapshot).FirstOrDefaultAsync();
-                if(existingSession != null)
-                {
-                    result.Result = existingSession.QuizAttemptSnapshot.QuizId ?? "";
-                }
-                else
-                {
-                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", quizSessionId);
-                }
-            }
-            catch(Exception ex)
-            {
-                result.Message = ex.Message;
-                StudyNestLogger.Instance.Error(ex.Message);
-            }
-            return result;
-        }
-        public async Task<ReturnResult<bool>> MoveToNextIndex(string quizSessionId)
-        {
-            ReturnResult<bool> result = new ReturnResult<bool>();
-            try
-            {
-                var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == quizSessionId.Trim() 
-                                                                        && x.Status == QuizSessionStatus.InProgress).
-                                                                        FirstOrDefaultAsync();
-                if(existingQuizSession != null)
-                {
-                    existingQuizSession.CurrentQuestionIndex = existingQuizSession.CurrentQuestionIndex + 1;
-                    _dbContext.Update(existingQuizSession);
-                    if(await _dbContext.SaveChangesAsync() > 0)
-                    {
-                        result.Result = true;
-                    }
-                    else
-                    {
-                        result.Message = "Cannot save try again";
-                    }
-                }
-                else
-                {
-                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", quizSessionId);
-                }
-            }
-            catch(Exception ex)
-            {
-                result.Message = ex.Message;
-                StudyNestLogger.Instance.Error(ex.Message);
-            }
-            return result;
-        }
-        public async Task<ReturnResult<bool>> TriggerSubmitAnswer(string quizSessionId, QuizAttemptSnapshotDTO snapshot)
-        {
-            ReturnResult<bool> result = new ReturnResult<bool>();
-            try
-            {
-                var quizSessionResult = await GetQuizSessionById(quizSessionId);
-                if (quizSessionResult.Result != null)
-                {
-                    //Notify all user to submit the answer
-                    await _sessionHub.Clients.Groups(quizSessionId).SubmitAnswer();
-                    //We delay so that user can see the answer result before moving to next question
-                    await Task.Delay(5000);
-                    if (quizSessionResult.Result.CurrentQuestionIndex + 1 < snapshot.QuizQuestionsParsed?.Count())
-                    {
-                        var updatedIndexResult = await MoveToNextIndex(quizSessionId);
-                        if (updatedIndexResult.Result)
-                        {
-                            await _sessionHub.Clients.Groups(quizSessionId).MoveToNextQuestion();
-                            BackgroundJob.Schedule<IQuizSessionBusiness>(x => x.TriggerSubmitAnswer(quizSessionId, snapshot), TimeSpan.FromSeconds(quizSessionResult.Result.TimeForEachQuestion));
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                result.Message = ex.Message;
-                StudyNestLogger.Instance.Error(ex.Message);
             }
             return result;
         }
