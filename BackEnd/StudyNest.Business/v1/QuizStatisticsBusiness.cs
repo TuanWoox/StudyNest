@@ -82,7 +82,7 @@ namespace StudyNest.Business.v1
                                                                                 .FirstOrDefault(q => q.Id == g.Key.SnapshotQuestionId) ?? new QuestionDTO(),
                                                             WrongCounts = g.Count()
                                                         })
-                                                        .OrderBy(x => x.WrongCounts)
+                                                        .OrderByDescending(x => x.WrongCounts)
                                                         .ToList();
 
 
