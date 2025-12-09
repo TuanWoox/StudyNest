@@ -300,16 +300,49 @@ namespace StudyNest.Business.v1
             ReturnResult<QuizAttemptAnswerDTO> result = new ReturnResult<QuizAttemptAnswerDTO>();
             try
             {
-                var existingAttempt = await _dbContext.QuizAttempts
-                                                .Where(x => x.Id == submittedAnswer.QuizAttemptId
-                                                        && x.QuizSessionId != null)
-                                                .Include(x => x.QuizAttemptSnapshot)
-                                                .FirstOrDefaultAsync();
+                var existingAttempt = await _dbContext.QuizAttempts.Where(x => x.Id == submittedAnswer.QuizAttemptId
+                                                                    && x.QuizSessionId != null)
+                                                                    .Include(x => x.QuizAttemptSnapshot)
+                                                                    .Include(x => x.QuizAttemptAnswers)
+                                                                    .FirstOrDefaultAsync();
                 if (existingAttempt != null)
                 {
-                    if(existingAttempt.QuizAttemptSnapshot != null)
+                    if (existingAttempt.QuizAttemptSnapshot != null)
                     {
+                        // Create the answer
                         result = await _quizAttemptAnswerBusiness.CreateQuizAttemptAnswerForQuizSession(existingAttempt.Id, submittedAnswer);
+
+                        // If answer was created successfully, recalculate the score
+                        if (result.Result != null)
+                        {
+                            // Parse the quiz questions from the snapshot
+                            var jsonString = existingAttempt.QuizAttemptSnapshot.QuizQuestions;
+                            if (!string.IsNullOrEmpty(jsonString))
+                            {
+                                List<QuestionDTO> parsedQuestions = JsonSerializer.Deserialize<List<QuestionDTO>>(jsonString)!;
+
+                                if (parsedQuestions != null && parsedQuestions.Any())
+                                {
+                                    // Reload the attempt with all answers to calculate the score
+                                    var updatedAttempt = await _dbContext.QuizAttempts
+                                                                        .Where(x => x.Id == existingAttempt.Id)
+                                                                        .Include(x => x.QuizAttemptAnswers)
+                                                                        .FirstOrDefaultAsync();
+
+                                    if (updatedAttempt != null)
+                                    {
+                                        // Calculate the score (Percentage of correct answers)
+                                        int totalQuestions = parsedQuestions.Count;
+                                        int correctAnswers = updatedAttempt.QuizAttemptAnswers.Count(x => x.IsCorrect);
+                                        updatedAttempt.Score = (int)Math.Round((double)(correctAnswers * 100) / totalQuestions);
+
+                                        // Update the attempt with the new score
+                                        _dbContext.QuizAttempts.Update(updatedAttempt);
+                                        await _dbContext.SaveChangesAsync();
+                                    }
+                                }
+                            }
+                        }
                     }
                     else
                     {

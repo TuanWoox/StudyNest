@@ -6,6 +6,7 @@ using StudyNest.Business.Hubs.RealTimeCache;
 using StudyNest.Common.DbEntities.Entities;
 using StudyNest.Common.Interfaces;
 using StudyNest.Common.Models.DTOs.CoreDTO;
+using StudyNest.Common.Models.DTOs.EntityDTO.QuizAttempt;
 using StudyNest.Common.Models.DTOs.EntityDTO.QuizAttemptSnapshot;
 using StudyNest.Common.Models.DTOs.EntityDTO.QuizSession;
 using StudyNest.Common.Utils.Enums;
@@ -336,45 +337,56 @@ namespace StudyNest.Business.v1
             ReturnResult<bool> result = new ReturnResult<bool>();
             try
             {
-                var quizSessionResult = await GetQuizSessionById(quizSessionId);
-                if (quizSessionResult.Result != null)
+                var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == quizSessionId.Trim()
+                                                                        && x.Status == QuizSessionStatus.InProgress)
+                                                                        .FirstOrDefaultAsync();
+                if (existingQuizSession != null)
                 {
                     //Notify all user to submit the answer
                     await _sessionHub.Clients.Groups(quizSessionId).SubmitAnswer();
                     //We delay so that user can see the answer result before moving to next question
                     await Task.Delay(2000);
-                    if (quizSessionResult.Result.CurrentQuestionIndex + 1 < snapshot.QuizQuestionsParsed?.Count())
+                    if (existingQuizSession.CurrentQuestionIndex + 1 < snapshot.QuizQuestionsParsed?.Count())
                     {
-                        // Move to next index
-                        var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == quizSessionId.Trim()
-                                                                        && x.Status == QuizSessionStatus.InProgress)
-                                                                        .FirstOrDefaultAsync();
-                        if (existingQuizSession != null)
-                        {
-                            existingQuizSession.CurrentQuestionIndex = existingQuizSession.CurrentQuestionIndex + 1;
-                            _dbContext.Update(existingQuizSession);
+                        existingQuizSession.CurrentQuestionIndex = existingQuizSession.CurrentQuestionIndex + 1;
+                        _dbContext.Update(existingQuizSession);
 
-                            if (await _dbContext.SaveChangesAsync() > 0)
-                            {
-                                await _sessionHub.Clients.Groups(quizSessionId).MoveToNextQuestion();
-                                BackgroundJob.Schedule<IQuizSessionBusiness>(x => x.TriggerSubmitAnswer(quizSessionId, snapshot), TimeSpan.FromSeconds(quizSessionResult.Result.TimeForEachQuestion));
-                                result.Result = true;
-                            }
-                            else
-                            {
-                                result.Message = "Cannot save quiz session, please try again";
-                                StudyNestLogger.Instance.Error($"Failed to save quiz session {quizSessionId} when moving to next index");
-                            }
+                        if (await _dbContext.SaveChangesAsync() > 0)
+                        {
+                            await _sessionHub.Clients.Groups(quizSessionId).MoveToNextQuestion();
+                            BackgroundJob.Schedule<IQuizSessionBusiness>(x => x.TriggerSubmitAnswer(quizSessionId, snapshot), TimeSpan.FromSeconds(existingQuizSession.TimeForEachQuestion));
+                            result.Result = true;
                         }
                         else
                         {
-                            result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_FOUND, "quiz session", quizSessionId);
-                            StudyNestLogger.Instance.Error($"Quiz session {quizSessionId} not found or not in progress when moving to next index");
+                            result.Message = "Cannot save quiz session, please try again";
+                            StudyNestLogger.Instance.Error($"Failed to save quiz session {quizSessionId} when moving to next index");
                         }
                     }
                     else
                     {
-                        result.Result = true;
+                        existingQuizSession.Status = QuizSessionStatus.Completed;
+                        _dbContext.Update(existingQuizSession);
+                        if(await _dbContext.SaveChangesAsync() > 0)
+                        {
+                            var existingAttempts = await _dbContext.QuizAttempts.Where(x => x.QuizSessionId == quizSessionId)
+                                                                                        .Include(x => x.User)
+                                                                                        .OrderByDescending(x => x.Score)
+                                                                                        .AsNoTracking()                                                                                        
+                                                                                        .ToListAsync();
+
+                            List<QuizAttemptDTO> quizAttemptDTOs = new List<QuizAttemptDTO>();
+                            if(existingAttempts.Count() > 0)
+                            {
+                                quizAttemptDTOs = _mapper.Map<List<QuizAttemptDTO>>(existingAttempts);
+                            }
+                            await _sessionHub.Clients.Group(quizSessionId).QuizEnded(quizAttemptDTOs);
+                        }
+                        else
+                        {
+                            result.Message = "Cannot save quiz session, please try again";
+                            StudyNestLogger.Instance.Error($"Failed to save quiz session {quizSessionId} when ending the quiz");
+                        }
                     }
                 }
                 else

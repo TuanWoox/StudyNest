@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 using StudyNest.Business.Hubs.RealTimeCache;
 using StudyNest.Common.Interfaces;
 using StudyNest.Common.Models.DTOs.CoreDTO;
+using StudyNest.Common.Models.DTOs.EntityDTO.QuizAttempt;
 using StudyNest.Common.Models.DTOs.EntityDTO.QuizSession;
 
 
@@ -18,6 +19,7 @@ namespace StudyNest.Business.Hubs
         Task SendQuizAttempt(object dataSendback);
         Task SubmitAnswer();
         Task MoveToNextQuestion();
+        Task QuizEnded(List<QuizAttemptDTO> quizSessionAttempts);
     }
     [Authorize]
     public class QuizSessionHub : Hub<IQuizSessionClient>

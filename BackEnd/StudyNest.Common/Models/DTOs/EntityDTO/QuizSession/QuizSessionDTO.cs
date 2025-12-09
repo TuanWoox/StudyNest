@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using StudyNest.Common.DbEntities.BaseEntity;
 using StudyNest.Common.DbEntities.Entities;
+using StudyNest.Common.Models.DTOs.EntityDTO.QuizAttempt;
 using StudyNest.Common.Utils.Enums;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,6 @@ namespace StudyNest.Common.Models.DTOs.EntityDTO.QuizSession
         public DateTimeOffset? DateTimeEnded { get; set; }
         public string OwnerId { get; set; }
         public string QuizAttemptSnapshotId { get; set; }
-        public ICollection<DbEntities.Entities.QuizAttempt> QuizAttempts { get; set; } = new List<DbEntities.Entities.QuizAttempt>();
+        public ICollection<QuizAttemptDTO> QuizAttempts { get; set; } = new List<QuizAttemptDTO>();
     }
 }

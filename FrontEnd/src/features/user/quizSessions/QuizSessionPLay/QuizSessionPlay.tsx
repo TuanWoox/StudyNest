@@ -13,6 +13,7 @@ import GamePinEntry from "./components/GamePinEntry";
 import WaitingLobby from "./components/WaitingLobby";
 import QuizPreparingScreen from "./components/QuizPreparingScreen";
 import QuizSessionDisplay from "./components/QuizSessionDisplay";
+import QuizSessionResults from "./components/QuizSessionResults";
 import { useSubmitAnswerForQuizSession } from "@/hooks/quizAttempt/useSubmitAnswerForQuizSession";
 import { useReduxDispatch } from "@/hooks/reduxHook/useReduxDispatch";
 import { 
@@ -24,7 +25,6 @@ import {
     selectPlayers,
     selectIsLoadingPrepare,
     selectQuizAttempt,
-    selectSubmitResult,
     setIsJoined,
     setPlayers,
     setIsLoadingPrepare,
@@ -43,6 +43,9 @@ const QuizSessionPlay: React.FC = () => {
     const { startQuizSessionAsync } = useStartQuizSession();
     const userId = useReduxSelector(selectUserId);
     const dispatch = useReduxDispatch();
+    
+    // Local state for quiz results
+    const [quizSessionAttempts, setQuizSessionAttempts] = useState<QuizAttemptDTO[] | null>(null);
     
     // Redux selectors
     const isJoined = useReduxSelector(selectIsJoined);
@@ -78,6 +81,11 @@ const QuizSessionPlay: React.FC = () => {
             startQuizSessionAsync(sessionId)
         }
     }, [sessionId, startQuizSessionAsync])
+    
+    const handleCloseResults = useCallback(() => {
+        setQuizSessionAttempts(null);
+        navigate(-1);
+    }, [navigate]);
     
     const handleLeave = useCallback(async () => {
         if (!connection || !sessionId) return;
@@ -148,6 +156,10 @@ const QuizSessionPlay: React.FC = () => {
             dispatch(moveToNextQuestion());
         }
 
+        const handleEndedQuiz = (quizSessionAttempts: QuizAttemptDTO[]) => {
+            setQuizSessionAttempts(quizSessionAttempts);
+        }
+
         // Register all event listeners
         connection.on('UserJoinQuizSession', handleUserJoin);
         connection.on('UserExitQuizSession', handleUserExit);
@@ -156,6 +168,7 @@ const QuizSessionPlay: React.FC = () => {
         connection.on('QuizHasBeenStarted', handleQuizStarted);
         connection.on('SubmitAnswer', handleQuizSubmit);
         connection.on('MoveToNextQuestion', handleMoveToNextQuestion);
+        connection.on('QuizEnded', handleEndedQuiz)
 
         // Cleanup function to remove event listeners
         return () => {
@@ -166,6 +179,7 @@ const QuizSessionPlay: React.FC = () => {
             connection.off('QuizHasBeenStarted', handleQuizStarted);
             connection.off('SubmitAnswer', handleQuizSubmit);
             connection.off('MoveToNextQuestion', handleMoveToNextQuestion);
+            connection.off('QuizEnded', handleEndedQuiz);
         };
     }, [connection, isJoined, quizAttempt, navigate, dispatch, currentAnswer, submitAnswerAsync]);
 
@@ -181,6 +195,14 @@ const QuizSessionPlay: React.FC = () => {
             dispatch(resetState());
         };
     }, [dispatch]);
+
+    // Show results dashboard if quiz has ended
+    if (quizSessionAttempts) {
+        return <QuizSessionResults
+            quizSessionAttempts={quizSessionAttempts}
+            onClose={handleCloseResults}
+        />;
+    }
 
     // Show PIN entry screen if not joined and not host
     if (!isJoined && !(userId === data?.ownerId)) {
