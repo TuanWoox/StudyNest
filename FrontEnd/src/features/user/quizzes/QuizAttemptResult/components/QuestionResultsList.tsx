@@ -12,9 +12,10 @@ interface QuestionResultsListProps {
     answers: QuizAttemptAnswerDTO[] | undefined;
     quizId: string | undefined;
     fromHistory: boolean | false;
+    fromQuizSession?: boolean;
 }
 
-const QuestionResultsList = ({ questions, answers, quizId, fromHistory }: QuestionResultsListProps) => {
+const QuestionResultsList = ({ questions, answers, quizId, fromHistory, fromQuizSession }: QuestionResultsListProps) => {
     const { token } = theme.useToken();
     // const darkMode = useOutletContext<boolean>();
     const darkMode = useReduxSelector(selectDarkMode);
@@ -44,10 +45,13 @@ const QuestionResultsList = ({ questions, answers, quizId, fromHistory }: Questi
 
     const onClickBackToQuiz = () => {
         if (quizId) window.localStorage.removeItem(quizId);
-        if(fromHistory) {
-            navigate(`/user/quiz/history/${quizId}`)
+        if (fromQuizSession) {
+            navigate('/user/quiz');
+        } else if (fromHistory) {
+            navigate(`/user/quiz/history/${quizId}`);
+        } else {
+            navigate(`/user/quiz/${quizId}`);
         }
-        else navigate(`/user/quiz/${quizId}`)
     };
 
     const primaryColor = token.colorPrimary;
@@ -82,7 +86,7 @@ const QuestionResultsList = ({ questions, answers, quizId, fromHistory }: Questi
                         border: `1px solid ${borderColor}`,
                     }}
                 >
-                    Back to {fromHistory ? "History" : "Quiz"} 
+                    Back to {fromQuizSession ? "Quizzes" : fromHistory ? "History" : "Quiz"}
                 </Button>
 
                 {totalQuestions > pageSize && (

@@ -329,7 +329,9 @@ const QuizSessionResults: React.FC<QuizSessionResultsProps> = ({ quizSessionAtte
                         size="large"
                         type="primary"
                         onClick={() => {
-                            navigate(`/user/quiz/quizAttemptResult/${quizAttempt?.id}`)
+                            navigate(`/user/quiz/quizAttemptResult/${quizAttempt?.id}`, {
+                                state: { fromQuizSession: true }
+                            })
                         }}
                         style={{
                             fontFamily: '"Courier New", monospace',

@@ -11,6 +11,7 @@ const QuizResultView = () => {
 
     const location = useLocation();
     const fromHistory = location.state?.fromHistory === true;
+    const fromQuizSession = location.state?.fromQuizSession === true;
 
     if (isLoading) {
         return <QuizContentViewSkeleton />;
@@ -37,6 +38,7 @@ const QuizResultView = () => {
                 questions={data?.quizAttemptSnapshot.quizQuestionsParsed}
                 quizId={data?.quizAttemptSnapshot.quizId}
                 fromHistory={fromHistory}
+                fromQuizSession={fromQuizSession}
             />
         </div>
     );
