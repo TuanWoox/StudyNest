@@ -15,6 +15,7 @@ interface QuizSessionAttemptState {
     quizAttempt: QuizAttemptDTO | null;
     submitResult: QuizAttemptAnswerDTO | undefined;
     isTimeUp: boolean;
+    quizSessionAttemptsEnded: QuizAttemptDTO[] | null;
 }
 
 const initialState: QuizSessionAttemptState = {
@@ -27,6 +28,7 @@ const initialState: QuizSessionAttemptState = {
     quizAttempt: null,
     submitResult: undefined,
     isTimeUp: false,
+    quizSessionAttemptsEnded: null,
 };
 
 const quizSessionAttemptSlice = createSlice({
@@ -81,6 +83,9 @@ const quizSessionAttemptSlice = createSlice({
         },
         setIsTimeUp: (state, action: PayloadAction<boolean>) => {
             state.isTimeUp = action.payload;
+        },
+        setQuizSessionAttemptsEnded: (state, action: PayloadAction<QuizAttemptDTO[] | null>) => {
+            state.quizSessionAttemptsEnded = action.payload;
         },
         resetState: () => initialState,
     },
@@ -144,6 +149,12 @@ export const selectIsTimeUp = createSelector(
     (state) => state.isTimeUp
 );
 
+// Selector for quizSessionAttemptsEnded
+export const selectQuizSessionAttemptsEnded = createSelector(
+    [selectQuizSessionAttempt],
+    (state) => state.quizSessionAttemptsEnded
+);
+
 // Selector for navigation state
 export const selectQuizSessionNavigation = createSelector(
     [selectQuizSessionAttempt],
@@ -198,6 +209,7 @@ export const {
     setQuizAttempt,
     setSubmitResult,
     setIsTimeUp,
+    setQuizSessionAttemptsEnded,
     resetState,
 } = quizSessionAttemptSlice.actions;
 

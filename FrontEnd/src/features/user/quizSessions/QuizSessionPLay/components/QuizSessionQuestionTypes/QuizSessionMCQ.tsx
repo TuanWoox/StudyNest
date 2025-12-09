@@ -69,19 +69,29 @@ const QuizSessionMCQ: React.FC = () => {
         // After time up - show correct/incorrect based on selectedChoiceId
         if (isTimeUp) {
             if (isCorrect) {
-                // Correct answer - green theme
-                style.border = `3px solid #10b981`;
-                style.boxShadow = `5px 5px 0px #10b98160`;
-                style.backgroundColor = `#10b98110`;
+                if (isSelected) {
+                    // Correct answer that user selected - vibrant green
+                    style.border = `3px solid #10b981`;
+                    style.boxShadow = `5px 5px 0px #10b98160`;
+                    style.backgroundColor = `#10b98115`;
+                } else {
+                    // Correct answer but not selected - greyed green
+                    style.border = `2px solid #6b7280`;
+                    style.boxShadow = `3px 3px 0px #6b728040`;
+                    style.backgroundColor = `#6b728010`;
+                    style.filter = 'grayscale(50%) opacity(0.6)';
+                }
             } else if (isSelected) {
-                // Wrong answer that user selected - accent with warning
-                style.border = `3px solid ${primaryColor}`;
-                style.boxShadow = `5px 5px 0px ${primaryColor}60`;
-                style.backgroundColor = `${primaryColor}15`;
-                style.opacity = 0.85;
+                // Wrong answer that user selected - keep normal color
+                style.border = `3px solid #ef4444`;
+                style.boxShadow = `5px 5px 0px #ef444460`;
+                style.backgroundColor = `#ef444415`;
             } else {
-                // Not selected and not correct
-                style.opacity = 0.4;
+                // Not selected and not correct - grey
+                style.border = `2px solid #6b7280`;
+                style.boxShadow = `3px 3px 0px #6b728040`;
+                style.backgroundColor = `#6b728010`;
+                style.filter = 'grayscale(80%) opacity(0.5)';
             }
         }
 

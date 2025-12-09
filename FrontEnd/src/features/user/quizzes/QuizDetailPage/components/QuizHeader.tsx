@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { Flex, Space, message } from "antd";
+import React, { useState, useEffect, useRef } from "react";
+import { Flex, Space, message, Alert, Button } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import useUpdateQuiz from "@/hooks/quizHook/useUpdateQuiz";
 import { validateQuizTitle } from "@/utils/validation";
 import { QuizTitleEditor, QuizTitleDisplay, QuizActions } from "./";
+import CreateQuizSessionModal, { CreateQuizSessionModalRef } from "./CreateQuizSessionModal";
+import { QuizSessionDTO } from "@/types/quizSession/quizSession";
 
 interface QuizHeaderProps {
   quiz: any;
   onDirtyChange: (isDirty: boolean) => void;
   showConfirmDiscard: (action: () => void) => void;
   onTakeQuiz: () => void;
+  activeSession?: QuizSessionDTO;
+  isLoadingActiveSession?: boolean;
 }
 
 const QuizHeader: React.FC<QuizHeaderProps> = ({
@@ -18,11 +22,14 @@ const QuizHeader: React.FC<QuizHeaderProps> = ({
   onDirtyChange,
   showConfirmDiscard,
   onTakeQuiz,
+  activeSession,
+  isLoadingActiveSession,
 }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(quiz.title);
+  const createSessionModalRef = useRef<CreateQuizSessionModalRef>(null);
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   const { updateQuizAsync, isLoading: isUpdatingQuiz } = useUpdateQuiz();
@@ -79,6 +86,16 @@ const QuizHeader: React.FC<QuizHeaderProps> = ({
     });
   };
 
+  const handleCreateSession = async () => {
+    createSessionModalRef.current?.open(quiz.id);
+  };
+
+  const handleJoinActiveSession = () => {
+    if (activeSession?.id) {
+      navigate(`/user/quizSession/play/${activeSession.id}`);
+    }
+  };
+
   return (
     <Flex
       vertical
@@ -87,6 +104,37 @@ const QuizHeader: React.FC<QuizHeaderProps> = ({
         marginBottom: 0,
       }}
     >
+      {!isLoadingActiveSession && activeSession && (
+        <Alert
+          message="Active Quiz Session"
+          description={
+            <Flex vertical gap={8}>
+              <span>There is an ongoing quiz session. Join now to participate!</span>
+              <span style={{ fontFamily: "monospace", fontWeight: 600 }}>PIN: {activeSession.gamePin}</span>
+            </Flex>
+          }
+          type="info"
+          showIcon
+          action={
+            <Button
+              size="small"
+              type="primary"
+              onClick={handleJoinActiveSession}
+              style={{
+                borderRadius: 0,
+                fontFamily: "monospace",
+                fontWeight: 600,
+              }}
+            >
+              Join Session
+            </Button>
+          }
+          style={{
+            borderRadius: 0,
+            border: "2px solid",
+          }}
+        />
+      )}
       <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
         <Space size={isMobile ? 8 : 16} style={{ flex: 1, minWidth: 0 }}>
           {isEditingTitle ? (
@@ -102,8 +150,14 @@ const QuizHeader: React.FC<QuizHeaderProps> = ({
           )}
         </Space>
 
-        <QuizActions onTakeQuiz={onTakeQuiz} onBack={handleReturnQuiz} />
+        <QuizActions 
+          onTakeQuiz={onTakeQuiz}
+          onCreateSession={handleCreateSession}
+          onBack={handleReturnQuiz}
+        />
       </Flex>
+
+      <CreateQuizSessionModal ref={createSessionModalRef} />
     </Flex>
   );
 };

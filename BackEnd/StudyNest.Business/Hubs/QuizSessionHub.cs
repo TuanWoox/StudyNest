@@ -20,6 +20,7 @@ namespace StudyNest.Business.Hubs
         Task SubmitAnswer();
         Task MoveToNextQuestion();
         Task QuizEnded(List<QuizAttemptDTO> quizSessionAttempts);
+        Task QuizTerminated();
     }
     [Authorize]
     public class QuizSessionHub : Hub<IQuizSessionClient>

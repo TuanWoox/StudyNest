@@ -4,23 +4,21 @@ import { TrophyOutlined, UserOutlined, CheckCircleFilled, CloseCircleFilled } fr
 import { QuizAttemptDTO } from '@/types/quizAttempt/quizAttemptDTO';
 import { useAntDesignTheme } from '@/hooks/common';
 import { useNavigate } from 'react-router-dom';
+import { selectQuizAttempt } from '@/store/quizSessionAtemptSlice';
+import { useReduxSelector } from '@/hooks/reduxHook/useReduxSelector';
 
 const { Title, Text } = Typography;
 
 interface QuizSessionResultsProps {
     quizSessionAttempts: QuizAttemptDTO[];
-    onClose: () => void;
 }
 
-const QuizSessionResults: React.FC<QuizSessionResultsProps> = ({ quizSessionAttempts, onClose }) => {
-    const { primaryColor, bgColor, cardBorderStyle, cardShadowStyle } = useAntDesignTheme();
+const QuizSessionResults: React.FC<QuizSessionResultsProps> = ({ quizSessionAttempts }) => {
+    const { primaryColor, bgColor } = useAntDesignTheme();
     const navigate = useNavigate();
-
+    const quizAttempt = useReduxSelector(selectQuizAttempt);
     // Sort by score descending
     const sortedAttempts = [...quizSessionAttempts].sort((a, b) => b.score - a.score);
-
-    // Calculate statistics
-    const totalQuestions = sortedAttempts[0]?.quizAttemptAnswers?.length || 0;
     const averageScore = sortedAttempts.reduce((sum, attempt) => sum + attempt.score, 0) / sortedAttempts.length;
 
     const columns = [
@@ -329,20 +327,10 @@ const QuizSessionResults: React.FC<QuizSessionResultsProps> = ({ quizSessionAtte
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 24 }}>
                     <Button
                         size="large"
-                        onClick={onClose}
-                        style={{
-                            fontFamily: '"Courier New", monospace',
-                            border: `2px solid ${primaryColor}`,
-                            borderRadius: 0,
-                            boxShadow: `3px 3px 0px ${primaryColor}40`,
-                        }}
-                    >
-                        Close
-                    </Button>
-                    <Button
-                        size="large"
                         type="primary"
-                        onClick={() => navigate('/user/quiz-sessions')}
+                        onClick={() => {
+                            navigate(`/user/quiz/quizAttemptResult/${quizAttempt?.id}`)
+                        }}
                         style={{
                             fontFamily: '"Courier New", monospace',
                             backgroundColor: primaryColor,
@@ -351,7 +339,7 @@ const QuizSessionResults: React.FC<QuizSessionResultsProps> = ({ quizSessionAtte
                             boxShadow: `3px 3px 0px ${primaryColor}60`,
                         }}
                     >
-                        Back to Quiz Sessions
+                        Close & Review Results
                     </Button>
                 </div>
             </div>

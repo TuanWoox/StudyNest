@@ -14,6 +14,7 @@ import QuizHeader from "./components/QuizHeader";
 import QuestionList from "./components/QuestionList";
 import { QuizMetadataCard, QuizPublishSettings, UnsavedChangesModal } from "./components";
 import { useQuizTimeLimit } from "@/hooks/quizAttempt/useQuizTimeLimit";
+import { useGetActiveQuizSession } from "@/hooks/quizSessionHook/useGetActiveQuizSession";
 const { useToken } = theme;
 
 const QuizDetailPage: React.FC = () => {
@@ -50,6 +51,8 @@ const QuizDetailPage: React.FC = () => {
   } = useUnsavedChanges({ isDirty });
 
   const { openTimeLimitModal, TimeLimitModal } = useQuizTimeLimit({ quizId: id });
+
+  const { activeSession, isLoading: isLoadingActiveSession } = useGetActiveQuizSession(id || "", !!id);
 
   const handleReturnQuiz = () => {
     showConfirmDiscard(() => {
@@ -151,6 +154,8 @@ const QuizDetailPage: React.FC = () => {
             onDirtyChange={setIsDirty}
             showConfirmDiscard={showConfirmDiscard}
             onTakeQuiz={onTakeQuiz}
+            activeSession={activeSession}
+            isLoadingActiveSession={isLoadingActiveSession}
           />
           <QuizMetadataCard
             questionCount={quiz?.questions?.length ?? 0}

@@ -2,6 +2,7 @@
 using Hangfire;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Asn1.Mozilla;
 using StudyNest.Business.Hubs.RealTimeCache;
 using StudyNest.Common.DbEntities.Entities;
 using StudyNest.Common.Interfaces;
@@ -65,6 +66,26 @@ namespace StudyNest.Business.v1
             }
             return result;
         }
+        public async Task<ReturnResult<QuizSessionDTO>> GetActiveQuizSessionByQuizId(string quizId)
+        {
+            ReturnResult<QuizSessionDTO> result = new ReturnResult<QuizSessionDTO>();
+            try
+            {
+                var existingQuizSessionActive = await _dbContext.QuizSessions.Where(x => x.QuizAttemptSnapshot.QuizId == quizId.Trim()
+                                                                                && x.Status == QuizSessionStatus.NotStarted)
+                                                                              .FirstOrDefaultAsync();
+                if (existingQuizSessionActive != null)
+                {
+                    result.Result = _mapper.Map<QuizSessionDTO>(existingQuizSessionActive);
+                }
+            }
+            catch(Exception ex)
+            {
+                result.Message = ex.Message;
+                StudyNestLogger.Instance.Error(ex.Message);
+            }
+            return result;
+        }
         public async Task<ReturnResult<QuizSessionDTO>> CreateQuizSession(CreateQuizSessionDTO newEntity)
         {
             ReturnResult<QuizSessionDTO> result = new ReturnResult<QuizSessionDTO>();
@@ -92,10 +113,12 @@ namespace StudyNest.Business.v1
                 }
 
                 var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.QuizAttemptSnapshot.QuizId == newEntity.QuizId
-                                                                        && x.Status != Common.Utils.Enums.QuizSessionStatus.Abandoned)
-                                                                        .AsNoTracking()
-                                                                        .FirstOrDefaultAsync();
-                if(existingQuizSession != null)
+                                                                             && x.Status != QuizSessionStatus.Abandoned
+                                                                             && x.Status != QuizSessionStatus.Completed)
+                                                                    .AsNoTracking()
+                                                                    .FirstOrDefaultAsync();
+
+                if (existingQuizSession != null)
                 {
                     result.Message = "There is a session still going on, please abandon it or wait for it to be abandon and then start again";
                     return result;
@@ -469,6 +492,40 @@ namespace StudyNest.Business.v1
                 StudyNestLogger.Instance.Error(
                     $"Exception while terminating quizSessionId '{trimmedId}': {ex}"
                 );
+            }
+            return result;
+        }
+        public async Task<ReturnResult<bool>> TerminateQuizSession(string id)
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+            try
+            {
+                var existingQuizSession = await _dbContext.QuizSessions.Where(x => x.Id == id.Trim() 
+                                                                        && x.Status == QuizSessionStatus.NotStarted
+                                                                        && x.OwnerId == _userContext.UserId)
+                                                                        .FirstOrDefaultAsync();
+                if(existingQuizSession != null)
+                {
+                    existingQuizSession.Status = QuizSessionStatus.Abandoned;
+                    _dbContext.Update(existingQuizSession);
+                    if(await _dbContext.SaveChangesAsync() > 0)
+                    {
+                        result.Result = true;
+                        await _sessionHub.Clients.Group(id).QuizTerminated();
+                    }
+                    else
+                    {
+                        result.Message = "Cannot terminate the quiz session, please try again";
+                    }
+                }
+                else
+                {
+                    result.Message = string.Format(ResponseMessage.MESSAGE_ITEM_NOT_EXIST, "quiz sesison", id);
+                }
+            }
+            catch(Exception ex)
+            {
+                StudyNestLogger.Instance.Error(ex.Message);
             }
             return result;
         }

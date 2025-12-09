@@ -14,6 +14,7 @@ import WaitingLobby from "./components/WaitingLobby";
 import QuizPreparingScreen from "./components/QuizPreparingScreen";
 import QuizSessionDisplay from "./components/QuizSessionDisplay";
 import QuizSessionResults from "./components/QuizSessionResults";
+import QuizSessionClosed from "./components/QuizSessionClosed";
 import { useSubmitAnswerForQuizSession } from "@/hooks/quizAttempt/useSubmitAnswerForQuizSession";
 import { useReduxDispatch } from "@/hooks/reduxHook/useReduxDispatch";
 import { 
@@ -25,37 +26,36 @@ import {
     selectPlayers,
     selectIsLoadingPrepare,
     selectQuizAttempt,
+    selectQuizSessionAttemptsEnded,
     setIsJoined,
     setPlayers,
     setIsLoadingPrepare,
     setQuizAttempt,
     setSubmitResult,
+    setQuizSessionAttemptsEnded,
     resetState
 } from "@/store/quizSessionAtemptSlice";
 import useStartQuizSession from "@/hooks/quizSessionHook/useStartQuizSession";
+import { EQuizSessionStatus } from "@/utils/enums/EQuizSessionStatus";
 
 const QuizSessionPlay: React.FC = () => {
     const { sessionId } = useParams<{ sessionId: string }>();
     const navigate = useNavigate();
     const { connection } = useHub("/hub/quiz-session");
-    const { data } = useGetQuizSessionById(sessionId);
-    const { submitAnswerAsync, data: submitData, isLoading } = useSubmitAnswerForQuizSession();
-    const { startQuizSessionAsync } = useStartQuizSession();
+    const { data: quizSession } = useGetQuizSessionById(sessionId);
+    const { submitAnswerAsync, data: submitData } = useSubmitAnswerForQuizSession();
     const userId = useReduxSelector(selectUserId);
     const dispatch = useReduxDispatch();
     
-    // Local state for quiz results
-    const [quizSessionAttempts, setQuizSessionAttempts] = useState<QuizAttemptDTO[] | null>(null);
-    
     // Redux selectors
     const isJoined = useReduxSelector(selectIsJoined);
-    const players = useReduxSelector(selectPlayers);
     const isLoadingPrepare = useReduxSelector(selectIsLoadingPrepare);
     const quizAttempt = useReduxSelector(selectQuizAttempt);
     const currentQuestion = useReduxSelector(selectCurrentQuestion);
     const currentAnswer = useReduxSelector(selectCurrentAnswer);
+    const quizSessionAttemptsEnded = useReduxSelector(selectQuizSessionAttemptsEnded);
     
-    const isHost = data?.ownerId === userId;
+    const isHost = quizSession?.ownerId === userId;
 
     const handleJoinSession = useCallback(async (inputPin: string | undefined) => {
         if (!connection || !sessionId || !inputPin) return;
@@ -76,34 +76,12 @@ const QuizSessionPlay: React.FC = () => {
         }
     }, [connection, sessionId, dispatch]);
 
-    const handleStart = useCallback(async () => {
-        if(sessionId) {
-            startQuizSessionAsync(sessionId)
-        }
-    }, [sessionId, startQuizSessionAsync])
-    
-    const handleCloseResults = useCallback(() => {
-        setQuizSessionAttempts(null);
-        navigate(-1);
-    }, [navigate]);
-    
-    const handleLeave = useCallback(async () => {
-        if (!connection || !sessionId) return;
-        try {
-            await connection.invoke("LeaveQuizSession", sessionId);
-            toast.success("Left the session");
-            navigate(-1); // Go back to previous page
-        } catch (error) {
-            toast.error("Failed to leave session");
-            console.error("Leave session error:", error);
-        }
-    }, [connection, sessionId, navigate]);
-
+  
     useEffect(() => {
-        if (isHost) {
-            handleJoinSession(data?.gamePin);
+        if (isHost && quizSession.status != EQuizSessionStatus.Abandoned && quizSession.status != EQuizSessionStatus.Completed) {
+            handleJoinSession(quizSession?.gamePin);
         }
-    }, [isHost, data?.gamePin, handleJoinSession]);
+    }, [isHost, quizSession?.gamePin, quizSession?.status, handleJoinSession]);
 
     useEffect(() => {
         if (!connection || !isJoined) return;
@@ -157,7 +135,12 @@ const QuizSessionPlay: React.FC = () => {
         }
 
         const handleEndedQuiz = (quizSessionAttempts: QuizAttemptDTO[]) => {
-            setQuizSessionAttempts(quizSessionAttempts);
+            dispatch(setQuizSessionAttemptsEnded(quizSessionAttempts));
+        }
+
+        const handleQuizTerminate = () => {
+            navigate('/user/quiz');
+            toast.success("The quiz session has been terminated by the owner");
         }
 
         // Register all event listeners
@@ -169,6 +152,7 @@ const QuizSessionPlay: React.FC = () => {
         connection.on('SubmitAnswer', handleQuizSubmit);
         connection.on('MoveToNextQuestion', handleMoveToNextQuestion);
         connection.on('QuizEnded', handleEndedQuiz)
+        connection.on("QuizTerminated", handleQuizTerminate);
 
         // Cleanup function to remove event listeners
         return () => {
@@ -180,6 +164,7 @@ const QuizSessionPlay: React.FC = () => {
             connection.off('SubmitAnswer', handleQuizSubmit);
             connection.off('MoveToNextQuestion', handleMoveToNextQuestion);
             connection.off('QuizEnded', handleEndedQuiz);
+            connection.off("QuizTerminated", handleQuizTerminate);
         };
     }, [connection, isJoined, quizAttempt, navigate, dispatch, currentAnswer, submitAnswerAsync]);
 
@@ -196,16 +181,20 @@ const QuizSessionPlay: React.FC = () => {
         };
     }, [dispatch]);
 
+    // Show closed screen if quiz session is completed or abandoned
+    if (quizSession?.status === EQuizSessionStatus.Completed || quizSession?.status === EQuizSessionStatus.Abandoned) {
+        return <QuizSessionClosed status={quizSession.status} />;
+    }
+
     // Show results dashboard if quiz has ended
-    if (quizSessionAttempts) {
+    if (quizSessionAttemptsEnded) {
         return <QuizSessionResults
-            quizSessionAttempts={quizSessionAttempts}
-            onClose={handleCloseResults}
+            quizSessionAttempts={quizSessionAttemptsEnded}
         />;
     }
 
     // Show PIN entry screen if not joined and not host
-    if (!isJoined && !(userId === data?.ownerId)) {
+    if (!isJoined && !isHost) {
         return <GamePinEntry
             onJoinSession={handleJoinSession}
         />;
@@ -221,15 +210,10 @@ const QuizSessionPlay: React.FC = () => {
         return <QuizSessionDisplay />;
     }
 
-    return (
-        <WaitingLobby
-            gamePin={data?.gamePin}
-            players={players}
-            isHost={isHost}
-            onStartGame={handleStart}
-            onLeave={handleLeave}
-        />
-    );
+    return <WaitingLobby
+        isHost={isHost}
+     />;
+
 };
 
 export default QuizSessionPlay;

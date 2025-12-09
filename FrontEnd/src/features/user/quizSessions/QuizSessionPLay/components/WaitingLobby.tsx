@@ -1,28 +1,70 @@
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { Card, Typography, Space, Button } from 'antd';
-import { UserOutlined, PlayCircleOutlined, LogoutOutlined } from '@ant-design/icons';
+import { UserOutlined, PlayCircleOutlined, LogoutOutlined, ShareAltOutlined, CopyOutlined, StopOutlined } from '@ant-design/icons';
 import { useAntDesignTheme } from '@/hooks/common';
+import { useReduxSelector } from '@/hooks/reduxHook/useReduxSelector';
+import { selectUserId } from '@/store/authSlice';
+import { selectPlayers } from '@/store/quizSessionAtemptSlice';
+import useGetQuizSessionById from '@/hooks/quizSessionHook/useGetQuizSessionById';
+import useStartQuizSession from '@/hooks/quizSessionHook/useStartQuizSession';
+import { useHub } from '@/hooks/hubHook/useHub';
+import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import TerminateQuizSessionModal, { TerminateQuizSessionModalRef } from './TerminateQuizSessionModal';
 
 const { Title, Text } = Typography;
 
 interface WaitingLobbyProps {
-    gamePin?: string;
-    players: string[];
     isHost: boolean;
-    onStartGame?: () => void;
-    onLeave?: () => void;
 }
-const WaitingLobby: React.FC<WaitingLobbyProps> = ({
-    gamePin,
-    players,
-    isHost,
-    onStartGame,
-    onLeave,
-}) => {
-    const { token, cardBorderStyle, cardShadowStyle, primaryColor, shadowColor, bgColor } = useAntDesignTheme();
+
+const WaitingLobby: React.FC<WaitingLobbyProps> = ({isHost } ) => {
+    const { cardBorderStyle, cardShadowStyle, primaryColor, shadowColor, bgColor } = useAntDesignTheme();
+    const { sessionId } = useParams<{ sessionId: string }>();
+    const navigate = useNavigate();
+    const { connection } = useHub("/hub/quiz-session");
+    const { data: quizSession } = useGetQuizSessionById(sessionId);
+    const { startQuizSessionAsync } = useStartQuizSession();
+    const players = useReduxSelector(selectPlayers);
+    const terminateModalRef = useRef<TerminateQuizSessionModalRef>(null);
+    
+    const gamePin = quizSession?.gamePin;
+    
+    const handleStart = useCallback(async () => {
+        if(sessionId) {
+            startQuizSessionAsync(sessionId)
+        }
+    }, [sessionId, startQuizSessionAsync]);
+    
+    const handleLeave = useCallback(async () => {
+        if (!connection || !sessionId) return;
+        try {
+            await connection.invoke("LeaveQuizSession", sessionId);
+            toast.success("Left the session");
+            navigate(-1);
+        } catch (error) {
+            toast.error("Failed to leave session");
+            console.error("Leave session error:", error);
+        }
+    }, [connection, sessionId, navigate]);
+
+    const handleCopyInviteLink = useCallback(() => {
+        const inviteLink = `${window.location.origin}/user/quizSession/play/${sessionId}`;
+        navigator.clipboard.writeText(inviteLink).then(() => {
+            toast.success("Invite link copied to clipboard!");
+        }).catch(() => {
+            toast.error("Failed to copy link");
+        });
+    }, [sessionId]);
+
+    const handleTerminate = useCallback(() => {
+        if (sessionId) {
+            terminateModalRef.current?.open(sessionId);
+        }
+    }, [sessionId]);
 
     return (
-        <div className="w-full min-h-screen overflow-y-auto p-4" style={{ backgroundColor: bgColor }}>
+        <div className="w-full min-h-dvh overflow-y-auto p-4" style={{ backgroundColor: bgColor }}>
             <div className="w-full max-w-full mx-auto">
                 <Card
                     className="text-center w-full"
@@ -49,18 +91,34 @@ const WaitingLobby: React.FC<WaitingLobbyProps> = ({
                                 backgroundColor: `${primaryColor}10`,
                             }}
                         >
-                            <div>
-                                <Text type="secondary">Game PIN</Text>
-                                <Title
-                                    level={2}
-                                    className="mb-0 tracking-wider"
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+                                <div>
+                                    <Text type="secondary">Game PIN</Text>
+                                    <Title
+                                        level={2}
+                                        className="mb-0 tracking-wider"
+                                        style={{
+                                            fontFamily: '"Courier New", monospace',
+                                            color: primaryColor
+                                        }}
+                                    >
+                                        {gamePin || '------'}
+                                    </Title>
+                                </div>
+                                <Button
+                                    size="middle"
+                                    icon={<CopyOutlined />}
+                                    onClick={handleCopyInviteLink}
                                     style={{
                                         fontFamily: '"Courier New", monospace',
-                                        color: primaryColor
+                                        fontWeight: 'bold',
+                                        border: `2px solid ${primaryColor}`,
+                                        borderRadius: 0,
+                                        boxShadow: `3px 3px 0px ${primaryColor}40`,
                                     }}
                                 >
-                                    {gamePin || '------'}
-                                </Title>
+                                    Copy Invite Link
+                                </Button>
                             </div>
                         </Card>
 
@@ -122,16 +180,17 @@ const WaitingLobby: React.FC<WaitingLobbyProps> = ({
                             </Card>
                         )}                    {isHost && (
                             <>
-                                <div className="flex gap-3 justify-center items-center">
+                                <div className="flex gap-3 justify-center items-center flex-wrap">
                                     <Button
                                         type="primary"
                                         size="middle"
                                         icon={<PlayCircleOutlined />}
-                                        onClick={onStartGame}
+                                        onClick={handleStart}
                                         disabled={players.length === 0}
                                         style={{
                                             fontFamily: '"Courier New", monospace',
-                                            fontWeight: 'bold'
+                                            fontWeight: 'bold',
+                                            borderRadius: 0,
                                         }}
                                     >
                                         Start Game
@@ -139,11 +198,24 @@ const WaitingLobby: React.FC<WaitingLobbyProps> = ({
                                     <Button
                                         danger
                                         size="middle"
-                                        icon={<LogoutOutlined />}
-                                        onClick={onLeave}
+                                        icon={<StopOutlined />}
+                                        onClick={handleTerminate}
                                         style={{
                                             fontFamily: '"Courier New", monospace',
-                                            fontWeight: 'bold'
+                                            fontWeight: 'bold',
+                                            borderRadius: 0,
+                                        }}
+                                    >
+                                        Terminate
+                                    </Button>
+                                    <Button
+                                        size="middle"
+                                        icon={<LogoutOutlined />}
+                                        onClick={handleLeave}
+                                        style={{
+                                            fontFamily: '"Courier New", monospace',
+                                            fontWeight: 'bold',
+                                            borderRadius: 0,
                                         }}
                                     >
                                         Leave
@@ -171,7 +243,7 @@ const WaitingLobby: React.FC<WaitingLobbyProps> = ({
                                     danger
                                     size="middle"
                                     icon={<LogoutOutlined />}
-                                    onClick={onLeave}
+                                    onClick={handleLeave}
                                     style={{
                                         fontFamily: '"Courier New", monospace',
                                         fontWeight: 'bold'
@@ -184,6 +256,7 @@ const WaitingLobby: React.FC<WaitingLobbyProps> = ({
                     </Space>
                 </Card>
             </div>
+            <TerminateQuizSessionModal ref={terminateModalRef} />
         </div>
     );
 };

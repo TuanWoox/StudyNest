@@ -65,59 +65,79 @@ const QuizPreparingScreen: React.FC = () => {
 
     return (
         <div
-            className="fixed inset-0 w-screen h-screen flex items-center justify-center p-6"
-            style={{ backgroundColor: bgColor }}
+            style={{ 
+                minHeight: '100vh',
+                backgroundColor: bgColor,
+                padding: '24px',
+                overflow: 'auto',
+                
+            }}
+            className='mx-auto'
         >
             <Card
-                className="w-full max-w-4xl"
                 style={{
-                    border: cardBorderStyle,
+                    border: `3px solid ${primaryColor}`,
                     borderRadius: 0,
-                    boxShadow: cardShadowStyle,
+                    boxShadow: `12px 12px 0px ${primaryColor}40`,
+                    maxWidth: '900px',
+                    width: '100%',
+                    padding: '24px',
+                    margin: '0 auto',
                 }}
             >
-                <div className="flex flex-col items-center gap-12 py-16">
+                <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    gap: '48px',
+                    padding: '32px 16px'
+                }}>
                     {/* Animated Icon */}
-                    <div className="relative">
+                    <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <div
-                            className="absolute inset-0 animate-ping opacity-20"
                             style={{
+                                position: 'absolute',
                                 backgroundColor: primaryColor,
                                 borderRadius: '50%',
-                                width: '120px',
-                                height: '120px',
+                                width: '140px',
+                                height: '140px',
+                                opacity: 0.2,
+                                animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
                             }}
                         />
-                        <div
-                            className="relative animate-bounce"
-                            style={{
-                                animation: 'bounce 1s infinite',
-                                fontSize: '80px',
-                            }}
-                        >
+                        <div style={{ animation: 'bounce 1s infinite', fontSize: '100px', lineHeight: 1 }}>
                             {steps[currentStep].icon}
                         </div>
                     </div>
 
                     {/* Title */}
-                    <div className="text-center">
+                    <div style={{ textAlign: 'center', maxWidth: '600px' }}>
                         <Title
                             level={1}
-                            className="mb-4"
-                            style={{ fontFamily: '"Courier New", monospace', fontSize: '3rem' }}
+                            style={{ 
+                                fontFamily: '"Courier New", monospace', 
+                                fontSize: 'clamp(2rem, 5vw, 3rem)',
+                                margin: 0,
+                                marginBottom: '16px',
+                                fontWeight: 'bold',
+                                color: primaryColor,
+                            }}
                         >
                             Preparing Your Quiz
                         </Title>
                         <Text
-                            className="text-2xl"
-                            style={{ fontFamily: '"Courier New", monospace' }}
+                            style={{ 
+                                fontFamily: '"Courier New", monospace',
+                                fontSize: 'clamp(1.1rem, 3vw, 1.5rem)',
+                                display: 'block',
+                            }}
                         >
                             {steps[currentStep].text}
                         </Text>
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="w-full max-w-2xl">
+                    <div style={{ width: '100%', maxWidth: '600px' }}>
                         <Progress
                             percent={progress}
                             strokeColor={{
@@ -126,18 +146,21 @@ const QuizPreparingScreen: React.FC = () => {
                             }}
                             trailColor={`${primaryColor}20`}
                             showInfo={false}
-                            strokeWidth={16}
+                            strokeWidth={20}
                         />
                     </div>
 
                     {/* Loading Dots Animation */}
-                    <div className="flex gap-3">
+                    <div style={{ display: 'flex', gap: '12px' }}>
                         {[0, 1, 2].map((i) => (
                             <div
                                 key={i}
-                                className="w-4 h-4 rounded-full animate-pulse"
                                 style={{
+                                    width: '16px',
+                                    height: '16px',
+                                    borderRadius: '50%',
                                     backgroundColor: primaryColor,
+                                    animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                                     animationDelay: `${i * 150}ms`,
                                 }}
                             />
@@ -146,25 +169,36 @@ const QuizPreparingScreen: React.FC = () => {
 
                     {/* Additional Info */}
                     <Card
-                        className="w-full"
                         style={{
                             border: `2px solid ${primaryColor}40`,
                             borderRadius: 0,
                             backgroundColor: `${primaryColor}10`,
+                            width: '100%',
+                            maxWidth: '700px',
                         }}
                     >
-                        <div className="flex items-center justify-center gap-3 py-2">
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '12px',
+                            padding: '8px',
+                            flexWrap: 'wrap',
+                        }}>
                             <LoadingOutlined
                                 style={{
-                                    fontSize: 24,
+                                    fontSize: 28,
                                     color: primaryColor
                                 }}
                                 spin
                             />
                             <Text
                                 type="secondary"
-                                className="text-lg"
-                                style={{ fontFamily: '"Courier New", monospace' }}
+                                style={{ 
+                                    fontFamily: '"Courier New", monospace',
+                                    fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                                    textAlign: 'center',
+                                }}
                             >
                                 Please wait while we set everything up for you...
                             </Text>
