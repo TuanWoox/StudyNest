@@ -16,10 +16,17 @@ const QuizSessionClosed: React.FC<QuizSessionClosedProps> = ({ status }) => {
     const navigate = useNavigate();
 
     const isCompleted = status === EQuizSessionStatus.Completed;
+    const isInProgress = status === EQuizSessionStatus.InProgress;
     const icon = isCompleted ? <StopOutlined /> : <CloseCircleOutlined />;
-    const title = isCompleted ? 'Quiz Session Completed' : 'Quiz Session Abandoned';
+    const title = isCompleted 
+        ? 'Quiz Session Completed' 
+        : isInProgress 
+        ? 'Quiz Session In Progress' 
+        : 'Quiz Session Abandoned';
     const message = isCompleted 
         ? 'This quiz session has been completed. Thank you for participating!'
+        : isInProgress
+        ? 'This quiz session is already in progress. You cannot join at this time.'
         : 'This quiz session has been abandoned and is no longer available.';
 
     return (

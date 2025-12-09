@@ -78,7 +78,10 @@ const QuizSessionPlay: React.FC = () => {
 
   
     useEffect(() => {
-        if (isHost && quizSession.status != EQuizSessionStatus.Abandoned && quizSession.status != EQuizSessionStatus.Completed) {
+        if (isHost && 
+            quizSession?.status !== EQuizSessionStatus.Abandoned && 
+            quizSession?.status !== EQuizSessionStatus.Completed && 
+            quizSession?.status !== EQuizSessionStatus.InProgress) {
             handleJoinSession(quizSession?.gamePin);
         }
     }, [isHost, quizSession?.gamePin, quizSession?.status, handleJoinSession]);
@@ -182,7 +185,9 @@ const QuizSessionPlay: React.FC = () => {
     }, [dispatch]);
 
     // Show closed screen if quiz session is completed or abandoned
-    if (quizSession?.status === EQuizSessionStatus.Completed || quizSession?.status === EQuizSessionStatus.Abandoned) {
+    if (quizSession?.status === EQuizSessionStatus.Completed || 
+        quizSession?.status === EQuizSessionStatus.Abandoned || 
+        quizSession?.status === EQuizSessionStatus.InProgress) {
         return <QuizSessionClosed status={quizSession.status} />;
     }
 
