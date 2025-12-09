@@ -1,12 +1,11 @@
 import {
-    DashboardOutlined,
-    UserOutlined,
     MessageOutlined,
     FileTextOutlined,
     EditOutlined,
     SettingOutlined,
+    GlobalOutlined,
+    ReconciliationOutlined,
 } from '@ant-design/icons';
-import path from 'path';
 
 export const adminMenus = [
     { path: '/admin/settings', name: 'Settings', icon: <SettingOutlined /> },
@@ -20,8 +19,8 @@ export const userMenus = [
         name: 'Quiz',
         icon: <EditOutlined />,
         children: [
-            { path: '/user/quiz', name: 'My Quizzes', key: '/user/quiz' },
-            { path: '/user/exploreQuiz', name: 'Explore', key: '/exploreQuiz' },
+            { path: '/user/quiz', name: 'My Quizzes', key: '/user/quiz', icon: <ReconciliationOutlined /> },
+            { path: '/user/exploreQuiz', name: 'Explore', key: '/exploreQuiz', icon: <GlobalOutlined /> },
         ]
     },
     { path: '/user/feedbacks', name: 'Feedback', icon: <MessageOutlined /> },

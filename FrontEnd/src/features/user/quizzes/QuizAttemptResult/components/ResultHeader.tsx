@@ -1,4 +1,4 @@
-import { Card, Button, Progress, Row, Col, Space, Tag, Divider } from 'antd';
+import { Card, Button, Progress, Row, Col, Space, Tag, Divider, Typography } from 'antd';
 import {
     RedoOutlined,
     CheckCircleOutlined,
@@ -11,6 +11,8 @@ import { useReduxSelector } from "@/hooks/reduxHook/useReduxSelector";
 import { selectDarkMode } from "@/store/themeSlice";
 import { useAntDesignTheme } from '@/hooks/common';
 import { useQuizTimeLimit } from '@/hooks/quizAttempt/useQuizTimeLimit';
+
+const { Title, Text } = Typography;
 
 interface ResultHeaderTypeProp {
     score: number | undefined;
@@ -87,20 +89,29 @@ const ResultHeader = ({
 
     return (
         <div
-            className={`w-full font-['Courier_New',monospace] transition-colors duration-500`}
+            className={`w-full font-[monospace] transition-colors duration-500`}
         >
             {/* Header */}
-            <div className="mb-4">
-                <h2
-                    className={`m-0 font-bold text-2xl tracking-tight`}
-                >
+            <div className='mb-3'>
+                <Title level={2}
+                    style={{
+                        margin: 0,
+                        fontWeight: 700,
+                        fontFamily: "monospace"
+                    }}>
                     Quiz Results
-                </h2>
-                <p
-                    className={`mt-1.5 text-xs md:text-sm `}
+                </Title>
+                <Text
+                    type="secondary"
+                    style={{
+                        fontSize: 15,
+                        marginTop: 4,
+                        display: "block",
+                        fontFamily: "monospace"
+                    }}
                 >
                     A summary of your performance and key insights
-                </p>
+                </Text>
             </div>
 
             {/* Card */}
@@ -109,7 +120,7 @@ const ResultHeader = ({
                 style={{
                     border: `1.5px solid ${borderColor}`,
                     boxShadow: `3px 3px 0 ${shadowColor}`,
-                    fontFamily: "'Courier New', monospace",
+                    fontFamily: "monospace",
                 }}
                 styles={{
                     body: {
@@ -157,9 +168,6 @@ const ResultHeader = ({
                                 strokeColor={performanceColor}
                                 status={animatedScore === 100 ? 'success' : 'active'}
                                 strokeWidth={10}
-                                style={{
-                                    fontFamily: "'Courier New', monospace",
-                                }}
                             />
 
                             {/* Correct / Incorrect */}
@@ -168,7 +176,6 @@ const ResultHeader = ({
                                     icon={<CheckCircleOutlined />}
                                     color="success"
                                     style={{
-                                        fontFamily: "'Courier New', monospace",
                                         borderRadius: 0,
                                         border: `1px solid ${borderColor}`,
                                         boxShadow: `2px 2px 0 ${shadowColor}`,
@@ -181,7 +188,6 @@ const ResultHeader = ({
                                     icon={<CloseCircleOutlined />}
                                     color="error"
                                     style={{
-                                        fontFamily: "'Courier New', monospace",
                                         borderRadius: 0,
                                         border: `1px solid ${borderColor}`,
                                         boxShadow: `2px 2px 0 ${shadowColor}`,
@@ -202,7 +208,6 @@ const ResultHeader = ({
                     className="p-5 rounded text-sm font-medium leading-relaxed mb-6"
                     style={{
                         background: feedback.background,
-                        fontFamily: "'Courier New', monospace",
                         border: `1px dashed ${borderColor}`,
                     }}
                 >

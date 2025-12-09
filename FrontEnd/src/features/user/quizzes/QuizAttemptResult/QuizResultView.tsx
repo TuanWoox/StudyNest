@@ -22,7 +22,7 @@ const QuizResultView = () => {
 
     return (
         <div
-            className="w-full mx-auto p-8 overflow-y-auto"
+            className="w-full mx-auto px-6 pt-4 pb-5 overflow-y-auto"
             style={{
                 scrollbarWidth: "none",
             }}

@@ -1,7 +1,7 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import * as signalR from "@microsoft/signalr";
-import { message } from "antd";
+import { App } from "antd";
 import { RootState, AppDispatch } from "@/store/store";
 import {
   addJob,
@@ -41,11 +41,11 @@ const loadJobsFromCache = (): QuizJob[] => {
     return jobs.filter((job) => job.createdAt > oneHourAgo);
   } catch (error) {
     console.error("Failed to load jobs from cache:", error);
-    return [];
-  }
+    return [];;  }
 };
 
 export const QuizJobProvider = ({ children, hubUrl }: ProviderProps) => {
+  const { message } = App.useApp();
   const dispatch = useDispatch<AppDispatch>();
   const jobs = useSelector((s: RootState) => s.quizJob);
   const unreadCount = useMemo(
@@ -62,7 +62,11 @@ export const QuizJobProvider = ({ children, hubUrl }: ProviderProps) => {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const role = useSelector(selectRole);
 
-  const accessToken = useMemo(() => localStorage.getItem("accessToken"), []);
+  const accessToken = useMemo(() => {
+    const token = localStorage.getItem("access_token") || localStorage.getItem("accessToken");
+    return token;
+  }, []);
+
   const shouldFetchData = useMemo(() => Boolean(role && accessToken), [role, accessToken]);
 
   useEffect(() => {
@@ -95,7 +99,6 @@ export const QuizJobProvider = ({ children, hubUrl }: ProviderProps) => {
 
   useEffect(() => {
     if (recentJobs && recentJobs.length > 0) {
-      console.log(`[Sync] Found ${recentJobs.length} jobs while disconnected`);
       recentJobs.forEach((job) => {
         if (job.status !== "processing" && job.status !== "queued") {
           dispatch(updateJob({ jobId: job.jobId, updates: job }));
@@ -113,13 +116,15 @@ export const QuizJobProvider = ({ children, hubUrl }: ProviderProps) => {
   }, [jobs, isInitialLoad, shouldFetchData]);
 
   useEffect(() => {
-    const resolvedHubUrl = hubUrl ?? (API_BASE ? `${API_BASE.replace(/\/+$/, "")}/hub/quiz-create` : "/hub/quiz-create");
-    const tokenFactory = () => accessToken ?? "";
+    if (!shouldFetchData || !accessToken) {
+      return;
+    }
 
-    if (!shouldFetchData || !resolvedHubUrl) return;
+    const baseHubUrl = hubUrl ?? (API_BASE ? `${API_BASE.replace(/\/+$/, "")}/hub/quiz-create` : "/hub/quiz-create");
+    const resolvedHubUrl = `${baseHubUrl}?access_token=${encodeURIComponent(accessToken)}`;
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(resolvedHubUrl, { accessTokenFactory: tokenFactory })
+      .withUrl(resolvedHubUrl)
       .withAutomaticReconnect({
         nextRetryDelayInMilliseconds: (ctx) => [0, 2000, 5000, 10000][Math.min(ctx.previousRetryCount, 3)],
       })
@@ -129,36 +134,41 @@ export const QuizJobProvider = ({ children, hubUrl }: ProviderProps) => {
     (connection as any).keepAliveIntervalInMilliseconds = 10_000;
 
     connection.onreconnecting(() => {
-      console.warn("SignalR Reconnecting...");
       setConnectionStatus("reconnecting");
       setLastDisconnectTime(Date.now());
     });
 
     connection.onreconnected(async () => {
-      console.log("SignalR Reconnected. Syncing missed data...");
       setConnectionStatus("connected");
       await refetchRecent(); 
     });
 
-    connection.onclose(() => setConnectionStatus("disconnected"));
+    connection.onclose(() => {
+      setConnectionStatus("disconnected");
+    });
 
     connection.on(
       "CreateStarted",
       (
         jobId: string, 
         noteTitle: string, 
-        timestamp: string, 
+        timestamp: string | Date | { dateTime: string }, 
         status: "queued" | "processing"
       ) => {
-        console.log("[SignalR] Job Update:", { jobId, status });
+        const timestampStr = timestamp instanceof Date 
+          ? timestamp.toISOString() 
+          : typeof timestamp === 'object' && timestamp !== null
+            ? new Date((timestamp as any).dateTime || timestamp).toISOString()
+            : String(timestamp);
+        
         dispatch(
           addJob({
             jobId,
             noteTitle,
-            timestamp,
+            timestamp: timestampStr,
             status: status,
             isViewed: false,
-            createdAt: new Date(timestamp).getTime(),
+            createdAt: new Date(timestampStr).getTime(),
           })
         );
       }
@@ -202,7 +212,9 @@ export const QuizJobProvider = ({ children, hubUrl }: ProviderProps) => {
         setConnectionStatus("connected");
       } catch (err) {
         setConnectionStatus("disconnected");
-        if (!stopped) setTimeout(start, 2000);
+        if (!stopped) {
+          setTimeout(start, 2000);
+        }
       }
     };
 
@@ -235,7 +247,6 @@ export const QuizJobProvider = ({ children, hubUrl }: ProviderProps) => {
       connectionStatus,
       isLoading: connectionStatus === "connecting" || connectionStatus === "reconnecting",
     }),
-    // 2. Keep markAsViewed in the dependency array
     [jobs, unreadCount, connectionStatus, markAsViewed] 
   );
 

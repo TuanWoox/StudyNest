@@ -11,6 +11,7 @@ using StudyNest.Business.v1;
 using StudyNest.Common.Llm;
 using StudyNest.Common.Llm.Providers;
 using StudyNest.Common.Security;
+using StudyNest.Common.Llm.Configurations;
 
 namespace StudyNest.Business.Repository
 {
@@ -42,6 +43,7 @@ namespace StudyNest.Business.Repository
             services.AddScoped<IFeedBackBusiness, FeedBackBusiness>();
             services.AddScoped<IEmailBusiness, EmailBusiness>();
             services.AddScoped<IQuizSessionBusiness, QuizSessionBusiness>();
+            services.AddScoped<QuizPromptBuilder>();
             return services;
         }
     }

@@ -140,7 +140,14 @@ const InnerLayout: React.FC<InnerLayoutProps> = ({
             if (item.children && item.children.length > 0) {
               return dom;
             }
-            return <div className="select-none" onClick={() => item.path && navigate(item.path)}>{dom}</div>;
+            return <div
+              className="select-none"
+              onClick={() => item.path && navigate(item.path)}
+            >
+              {item.icon && <span>{item.icon}</span>}
+              <span>{item.name}</span>
+            </div>
+            //<div className="select-none" onClick={() => item.path && navigate(item.path)}>{dom}</div>;
           }}
           subMenuItemRender={(item, dom) => (
             <div className="select-none" onClick={() => item.path && navigate(item.path)}>{dom}</div>

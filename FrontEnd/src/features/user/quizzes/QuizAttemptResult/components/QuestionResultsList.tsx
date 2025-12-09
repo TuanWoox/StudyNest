@@ -21,7 +21,7 @@ const QuestionResultsList = ({ questions, answers, quizId, fromHistory, fromQuiz
     const darkMode = useReduxSelector(selectDarkMode);
     const [currentPage, setCurrentPage] = useState(1);
     const navigate = useNavigate();
-    const pageSize = 4;
+    const pageSize = 10;
 
     useEffect(() => {
         setCurrentPage(1);
@@ -65,7 +65,7 @@ const QuestionResultsList = ({ questions, answers, quizId, fromHistory, fromQuiz
                     const answer = getAnswerForQuestion(question.id);
 
                     return (
-                        <Col xs={24} lg={12} key={question.id}>
+                        <Col xs={24} key={question.id}>
                             <QuestionResultCard
                                 question={question}
                                 answer={answer}
@@ -86,7 +86,7 @@ const QuestionResultsList = ({ questions, answers, quizId, fromHistory, fromQuiz
                         border: `1px solid ${borderColor}`,
                     }}
                 >
-                    Back to {fromQuizSession ? "Quizzes" : fromHistory ? "History" : "Quiz"}
+                    Back to {fromHistory ? "History" : "Quiz"}
                 </Button>
 
                 {totalQuestions > pageSize && (
@@ -107,5 +107,65 @@ const QuestionResultsList = ({ questions, answers, quizId, fromHistory, fromQuiz
         </div>
     );
 };
+
+// const QuestionResultsList = ({ questions, answers, quizId, fromHistory }: QuestionResultsListProps) => {
+//     const { token } = theme.useToken();
+//     const darkMode = useReduxSelector(selectDarkMode);
+//     const navigate = useNavigate();
+
+//     if (!questions || !answers) {
+//         return (
+//             <div className={`text-center py-8 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+//                 No results to display
+//             </div>
+//         );
+//     }
+
+//     const getAnswerForQuestion = (questionId: string) =>
+//         answers.find(answer => answer.snapshotQuestionId === questionId);
+
+//     const onClickBackToQuiz = () => {
+//         if (quizId) window.localStorage.removeItem(quizId);
+//         navigate(fromHistory ? `/user/quiz/history/${quizId}` : `/user/quiz/${quizId}`);
+//     };
+
+//     const primaryColor = token.colorPrimary;
+//     const borderColor = `${primaryColor}E0`;
+//     const shadowColor = `${primaryColor}55`;
+
+//     return (
+//         <div className="mt-3">
+//             <Row gutter={[16, 16]}>
+//                 {questions.map((question, idx) => {
+//                     const answer = getAnswerForQuestion(question.id);
+
+//                     return (
+//                         <Col xs={24} lg={24} key={question.id}>
+//                             <QuestionResultCard
+//                                 question={question}
+//                                 answer={answer}
+//                                 index={idx + 1}
+//                             />
+//                         </Col>
+//                     );
+//                 })}
+//             </Row>
+
+//             <div className="w-full flex justify-start items-center mt-4">
+//                 <Button
+//                     type="default"
+//                     onClick={onClickBackToQuiz}
+//                     style={{
+//                         fontWeight: 600,
+//                         boxShadow: `3px 3px 0 ${shadowColor}`,
+//                         border: `1px solid ${borderColor}`,
+//                     }}
+//                 >
+//                     Back to {fromHistory ? "History" : "Quiz"}
+//                 </Button>
+//             </div>
+//         </div>
+//     );
+// };
 
 export default QuestionResultsList;

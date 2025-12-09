@@ -198,7 +198,7 @@
 .ant-menu-submenu-title {
   color: var(--menu-text) !important;
   font-family: "IBM Plex Mono", "Courier New", monospace !important;
-  font-size: 20px !important;
+  font-size: 18px !important;
   font-weight: 550 !important;
   padding-inline: 2 !important;
   transition: all 0.2s ease;
@@ -261,6 +261,10 @@
   justify-content: center !important;
   color: var(--menu-text) !important;
   transition: all 0.2s ease;
+}
+
+.ant-menu-sub .ant-menu-item {
+  padding-left: 16px !important;
 }
 
 /* Khi selected trong collapse */
